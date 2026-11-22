@@ -1,0 +1,104 @@
+{% extends 'base/luminary_base.html' %}
+{% block title %}Payments | EduAI{% endblock %}
+{% block page_title %}Payments{% endblock %}
+{% block nav_payments %}is-active{% endblock %}
+{% block page_subtitle %}
+<p>Every payment you've submitted, grouped by the course it belongs to.</p>
+{% endblock %}
+
+{% block content %}
+{% if not booking_groups %}
+<div class="card">
+  <div class="empty">
+    <h3>No payments yet</h3>
+    <p>Once you book a tutor, your payments and their status will appear here.</p>
+    <a href="/tutors/" class="btn btn--primary">Find a tutor</a>
+  </div>
+</div>
+{% else %}
+
+<div class="stack">
+  {% for group in booking_groups %}
+  {% with booking=group.booking payments=group.payments %}
+  <section class="card">
+
+    <div class="card__head">
+      {% if booking.tutor.avatar %}
+        <img src="{{ booking.tutor.avatar.url }}" alt="" class="avatar">
+      {% else %}
+        <span class="avatar">{{ booking.tutor.username|upper|first }}</span>
+      {% endif %}
+      <div>
+        <h3>{{ booking.tutor.get_full_name|default:booking.tutor.username }}</h3>
+        <p class="xsmall muted">Booking #{{ booking.id }} · {{ booking.months }} month{{ booking.months|pluralize }} · ৳{{ group.monthly_rate|floatformat:"0g" }}/mo</p>
+      </div>
+      <span class="spacer"></span>
+      {% if booking.is_fully_paid %}
+        <span class="pill pill--approved">Fully paid</span>
+      {% elif booking.total_paid > 0 %}
+        <span class="pill pill--pending">৳{{ booking.total_paid|floatformat:"0g" }} of ৳{{ group.total_amount|floatformat:"0g" }}</span>
+      {% else %}
+        <span class="pill pill--rejected">Unpaid</span>
+      {% endif %}
+      {% if booking.is_payable and not group.has_pending %}
+        <a href="/payments/create/?booking_id={{ booking.id }}" class="btn btn--primary btn--sm">Pay now</a>
+      {% elif group.has_pending %}
+        <span class="small muted">Awaiting approval</span>
+      {% elif booking.status == 'pending' %}
+        <span class="small muted">Awaiting tutor confirmation</span>
+      {% endif %}
+      <a href="/bookings/{{ booking.id }}/" class="btn btn--quiet btn--sm">View booking</a>
+    </div>
+
+    <div class="card__body stack-s" style="background:var(--canvas)">
+      <div class="row row--between small">
+        <span><span class="money num">৳{{ booking.total_paid|floatformat:"0g" }}</span> paid</span>
+        <span class="muted num">of ৳{{ group.total_amount|floatformat:"0g" }}</span>
+      </div>
+      <div class="meter meter--green">
+        {% if group.total_amount > 0 %}{% widthratio booking.total_paid group.total_amount 100 as pct %}<i style="width:{{ pct }}%"></i>{% endif %}
+      </div>
+      {% if booking.balance_due > 0 %}
+      <p class="xsmall" style="color:var(--red)">৳{{ booking.balance_due|floatformat:"0g" }} remaining</p>
+      {% endif %}
+    </div>
+
+    {% if payments %}
+    <div class="tablewrap">
+      <table class="data">
+        <thead>
+          <tr>
+            <th>Amount</th><th>Type</th><th>Method</th><th>Date</th>
+            {% if user.role == 'tutor' %}<th class="right">You receive</th>{% endif %}
+            <th class="center">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in payments %}
+          <tr>
+            <td><span class="money num">৳{{ p.amount|floatformat:"0g" }}</span></td>
+            <td><span class="pill {% if p.is_first_payment %}pill--info{% else %}pill--confirmed{% endif %}">
+              {% if p.is_first_payment %}First month{% else %}Instalment{% endif %}</span></td>
+            <td>{{ p.get_payment_method_display }}</td>
+            <td class="muted nowrap">{{ p.created_at|date:"M d, Y" }}</td>
+            {% if user.role == 'tutor' %}
+            <td class="right num money--in">৳{{ p.tutor_income|floatformat:"0g" }}</td>
+            {% endif %}
+            <td class="center"><span class="pill pill--{{ p.status }}">{{ p.get_status_display }}</span></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="card__body">
+      <p class="muted small">No payments submitted for this booking yet.</p>
+    </div>
+    {% endif %}
+
+  </section>
+  {% endwith %}
+  {% endfor %}
+</div>
+{% endif %}
+{% endblock %}

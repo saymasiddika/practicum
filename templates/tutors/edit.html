@@ -1,0 +1,84 @@
+{% extends 'base/luminary_base.html' %}
+{% block nav_edit_profile %}is-active{% endblock %}
+{% block title %}{% if is_new %}Create your profile{% else %}Tutor profile{% endif %} | EduAI{% endblock %}
+
+{% block pagehead %}
+<div class="pagehead">
+  <div class="container">
+    <div class="pagehead__title">
+      <h1>{% if is_new %}Create your tutor profile{% else %}Your tutor profile{% endif %}</h1>
+    </div>
+    <p>This is about you, not about what you teach. Subjects, schedules and
+       fees belong to your courses, so you can offer several at different
+       prices.</p>
+  </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="stack" style="max-width:680px">
+
+  <form method="POST" class="card">
+    {% csrf_token %}
+    <div class="card__body stack">
+
+      <div class="field">
+        <label for="bio">Introduce yourself</label>
+        <textarea id="bio" name="bio" rows="6" required
+                  placeholder="What you teach, how long you have taught it, and how you work with students.">{{ tutor_profile.bio|default:'' }}</textarea>
+        <p class="xsmall muted">This is the first thing a student reads about
+           you. A few honest sentences beat a list of adjectives.</p>
+      </div>
+
+      <div class="alert alert--info">
+        Your name, photo and phone number come from
+        <a href="/accounts/edit-profile/">your account</a>. Your rating is
+        earned from student reviews and cannot be set here.
+      </div>
+
+    </div>
+
+    <div class="card__foot">
+      <button type="submit" class="btn btn--primary">
+        {% if is_new %}Create profile{% else %}Save profile{% endif %}
+      </button>
+      {% if not is_new %}
+      <a href="/tutors/courses/" class="btn btn--secondary">My courses</a>
+      {% endif %}
+    </div>
+  </form>
+
+  {% if not is_new %}
+  <section class="card">
+    <div class="card__head">
+      <h3>Your courses</h3>
+      <span class="spacer"></span>
+      <a href="/tutors/courses/add/" class="btn btn--primary btn--sm">Add a course</a>
+    </div>
+    <div class="card__body">
+      {% if courses %}
+      <div class="stack-s">
+        {% for course in courses %}
+        <div class="row row--between" style="padding-bottom:10px;border-bottom:1px solid var(--line-2)">
+          <div>
+            <div class="strong">{{ course.name }}</div>
+            <div class="xsmall muted">{{ course.subject }} &middot; {{ course.schedule_display }}</div>
+          </div>
+          <div class="row" style="gap:10px">
+            <span class="money num">৳{{ course.monthly_rate|floatformat:"0g" }}/mo</span>
+            {% if not course.is_active %}<span class="pill pill--rejected">Unpublished</span>{% endif %}
+            <a href="/tutors/courses/{{ course.id }}/edit/" class="btn btn--quiet btn--sm">Edit</a>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p class="muted">You have no courses yet, so students cannot book you.
+         <a href="/tutors/courses/add/">Add one</a>.</p>
+      {% endif %}
+    </div>
+  </section>
+  {% endif %}
+
+</div>
+{% endblock %}

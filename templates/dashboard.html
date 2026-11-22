@@ -1,0 +1,201 @@
+{% extends 'base/luminary_base.html' %}
+{% block title %}Dashboard | EduAI{% endblock %}
+{% block nav_dashboard %}is-active{% endblock %}
+{% block appbar_title %}{% if user.role == 'student' %}Student Dashboard{% else %}Tutor Dashboard{% endif %}{% endblock %}
+{% block topbar_action %}
+{% if user.role == 'student' %}
+<a href="/tutors/" class="btn btn--primary btn--sm" style="border-radius:9999px">Find a Tutor</a>
+{% else %}
+<a href="/bookings/" class="btn btn--primary btn--sm" style="border-radius:9999px">View Students</a>
+{% endif %}
+{% endblock %}
+
+{% block pagehead %}<div style="height:32px"></div>{% endblock %}
+
+{% block content %}
+<div class="stack" style="gap:40px">
+
+  <!-- Welcome banner -->
+  <section class="banner">
+    <div class="banner__body">
+      <p class="banner__eyebrow">Welcome back</p>
+      <h1>{{ user.get_full_name|default:user.username }}!</h1>
+      {% if user.role == 'student' %}
+      <p>You have {{ pending_bookings }} booking{{ pending_bookings|pluralize }} awaiting confirmation and {{ approved_bookings }} confirmed session{{ approved_bookings|pluralize }}.</p>
+      <div class="row" style="padding-top:8px">
+        <a href="/tutors/" class="btn btn--light">Find Tutor</a>
+        <a href="/bookings/" class="btn btn--glass">My Bookings</a>
+      </div>
+      {% else %}
+      <p>You have {{ pending_bookings }} request{{ pending_bookings|pluralize }} waiting for your response.</p>
+      <div class="row" style="padding-top:8px">
+        <a href="/bookings/" class="btn btn--light">View Students</a>
+        <a href="/tutors/courses/" class="btn btn--glass">My Courses</a>
+      </div>
+      {% endif %}
+    </div>
+    <div class="banner__glow" aria-hidden="true"></div>
+    <span class="ms banner__art" aria-hidden="true">{% if user.role == 'student' %}auto_stories{% else %}school{% endif %}</span>
+  </section>
+
+  {% if user.role == 'student' %}
+
+  <!-- Stats -->
+  <div class="grid grid--stats">
+    <div class="stat stat--blue">
+      <div class="stat__icon"><span class="ms ms--fill" aria-hidden="true">book_online</span></div>
+      <div class="stat__label">Total bookings</div>
+      <div class="stat__value">{{ total_bookings }}</div>
+    </div>
+    <div class="stat stat--green">
+      <div class="stat__icon"><span class="ms ms--fill" aria-hidden="true">check_circle</span></div>
+      <div class="stat__label">Completed</div>
+      <div class="stat__value">{{ completed_bookings }}</div>
+      <div class="meter meter--green"><i style="width:{{ completed_pct }}%"></i></div>
+    </div>
+    <div class="stat stat--amber">
+      <div class="stat__icon"><span class="ms ms--fill" aria-hidden="true">star</span></div>
+      <div class="stat__label">Average rating given</div>
+      <div class="stat__value num">{{ average_rating }}</div>
+      <div class="meter meter--amber"><i style="width:{{ rating_pct }}%"></i></div>
+    </div>
+    <div class="stat stat--violet">
+      <div class="stat__icon"><span class="ms ms--fill" aria-hidden="true">payments</span></div>
+      <div class="stat__label">Total spent</div>
+      <div class="stat__value" style="font-size:1.5rem">৳{{ total_spent|floatformat:"0g" }}</div>
+    </div>
+  </div>
+
+  <!-- Recent bookings -->
+  <section>
+    <div class="sectionhead">
+      <div>
+        <h2>Recent Bookings</h2>
+        <p>Your latest course requests</p>
+      </div>
+      <a href="/bookings/">View All</a>
+    </div>
+    {% if recent_bookings %}
+    <div class="hscroll">
+      {% for booking in recent_bookings %}
+      <div class="minicard">
+        <div class="minicard__who">
+          <span class="avatar" style="width:48px;height:48px;border-radius:16px;font-size:1.1rem">{{ booking.tutor.username|upper|first }}</span>
+          <div style="min-width:0">
+            <p class="strong small">{{ booking.tutor.get_full_name|default:booking.tutor.username }}</p>
+            <p class="xsmall muted">{% if booking.course %}{{ booking.course.subject }}{% else %}Course removed{% endif %}</p>
+          </div>
+        </div>
+        <div class="minicard__meta">
+          <span><span class="ms" aria-hidden="true">calendar_today</span>{{ booking.date|date:'M d, Y' }}</span>
+          <span class="pill pill--{{ booking.status }}">{{ booking.get_status_display }}</span>
+        </div>
+        <a href="/bookings/{{ booking.id }}/" class="btn btn--secondary btn--block" style="margin-top:4px">View Details</a>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty">
+      <span class="ms empty__icon" aria-hidden="true">book_online</span>
+      <h3>No bookings yet</h3>
+      <p>Find a tutor by subject and book your first course.</p>
+      <a href="/tutors/" class="btn btn--primary">Find a Tutor</a>
+    </div>
+    {% endif %}
+  </section>
+
+  <!-- Your tutors -->
+  <section>
+    <div class="sectionhead">
+      <h2>Your Tutors</h2>
+      <a href="/tutors/">Browse All</a>
+    </div>
+    {% if recent_tutors %}
+    <div class="grid grid--cards" style="gap:16px">
+      {% for tutor in recent_tutors %}
+      <a href="/tutors/{{ tutor.id }}/" class="tile">
+        <span class="avatar" style="width:48px;height:48px;font-size:1.1rem">{{ tutor.username|upper|first }}</span>
+        <div style="min-width:0">
+          <p class="strong small">{{ tutor.get_full_name|default:tutor.username }}</p>
+          <p class="xsmall muted">{% if tutor.tutor_profile %}{% for s in tutor.tutor_profile.subjects %}{% if not forloop.first %}, {% endif %}{{ s }}{% endfor %}{% endif %}</p>
+        </div>
+        <span class="ms" aria-hidden="true">arrow_forward_ios</span>
+      </a>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty" style="padding:32px 24px">
+      <p style="margin-bottom:0">Book a course to see your tutors here.</p>
+    </div>
+    {% endif %}
+  </section>
+
+  {% else %}
+
+  <!-- Stats -->
+  <div class="grid grid--stats">
+    <div class="stat stat--blue">
+      <div class="stat__icon"><span class="ms ms--fill" aria-hidden="true">groups</span></div>
+      <div class="stat__label">Total students</div>
+      <div class="stat__value">{{ total_students }}</div>
+    </div>
+    <div class="stat stat--amber">
+      <div class="stat__icon"><span class="ms ms--fill" aria-hidden="true">pending</span></div>
+      <div class="stat__label">Pending</div>
+      <div class="stat__value">{{ pending_bookings }}</div>
+      <div class="meter meter--amber"><i style="width:{{ pending_pct }}%"></i></div>
+    </div>
+    <div class="stat stat--green">
+      <div class="stat__icon"><span class="ms ms--fill" aria-hidden="true">star</span></div>
+      <div class="stat__label">Your rating</div>
+      <div class="stat__value num">{{ rating }}<span class="small" style="color:var(--slate-400)">/5</span></div>
+      <div class="meter meter--green"><i style="width:{{ rating_pct }}%"></i></div>
+    </div>
+    <div class="stat stat--violet">
+      <div class="stat__icon"><span class="ms ms--fill" aria-hidden="true">payments</span></div>
+      <div class="stat__label">Total earned</div>
+      <div class="stat__value" style="font-size:1.5rem">৳{{ total_earned|floatformat:"0g" }}</div>
+      <div class="stat__note">after commission</div>
+    </div>
+  </div>
+
+  <!-- Recent students -->
+  <section>
+    <div class="sectionhead">
+      <div>
+        <h2>Recent Students</h2>
+        <p>Students who booked your courses</p>
+      </div>
+      <a href="/bookings/">View All</a>
+    </div>
+    {% if recent_students %}
+    <div class="grid grid--cards" style="gap:16px">
+      {% for booking in recent_students %}
+      <a href="/bookings/{{ booking.id }}/" class="minicard">
+        <div class="minicard__who">
+          <span class="avatar" style="width:44px;height:44px">{{ booking.student.username|upper|first }}</span>
+          <div style="min-width:0">
+            <p class="strong small">{{ booking.student.get_full_name|default:booking.student.username }}</p>
+            <p class="xsmall muted">{{ booking.date|date:'M d, Y' }} · {{ booking.months }} month{{ booking.months|pluralize }}</p>
+          </div>
+        </div>
+        <div class="minicard__meta" style="margin-top:14px;padding-bottom:0">
+          <span class="minicard__subject">{% if booking.course %}{{ booking.course.subject }}{% endif %}</span>
+          <span class="pill pill--{{ booking.status }}">{{ booking.get_status_display }}</span>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty">
+      <span class="ms empty__icon" aria-hidden="true">groups</span>
+      <h3>No students yet</h3>
+      <p>Publish a course with its subject, schedule and monthly rate so students can find you.</p>
+      <a href="/tutors/courses/" class="btn btn--primary">Manage courses</a>
+    </div>
+    {% endif %}
+  </section>
+
+  {% endif %}
+</div>
+{% endblock %}

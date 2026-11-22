@@ -1,0 +1,174 @@
+{% extends 'base/luminary_base.html' %}
+{% block nav_admin_requests %}is-active{% endblock %}
+{% block title %}Early-end requests | EduAI{% endblock %}
+
+{% block pagehead %}
+<div class="pagehead">
+  <div class="container">
+    <div class="pagehead__title">
+      <h1>Early-end requests</h1>
+    </div>
+    <p>Students and tutors asking to finish a course early or pull out of one.
+       Your job is to judge the reason &mdash; the refund figure was set by
+       policy when the request was made.</p>
+  </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="stack">
+
+    <div class="grid grid--stats">
+      <div class="stat stat--amber">
+        <div class="stat__label">Awaiting review</div>
+        <div class="stat__value">{{ counts.pending }}</div>
+      </div>
+      <div class="stat stat--green">
+        <div class="stat__label">Approved</div>
+        <div class="stat__value">{{ counts.approved }}</div>
+      </div>
+      <div class="stat stat--red">
+        <div class="stat__label">Declined</div>
+        <div class="stat__value">{{ counts.declined }}</div>
+      </div>
+      <div class="stat stat--violet">
+        <div class="stat__label">Refunds owed</div>
+        <div class="stat__value" style="font-size:1.5rem">৳{{ refund_owed|floatformat:"0g" }}</div>
+        <div class="stat__note">approved, not yet sent</div>
+      </div>
+    </div>
+
+    <section class="card">
+      <div class="card__head">
+        <h3>Requests</h3>
+        <span class="spacer"></span>
+        <span class="small muted">{{ requests|length }} shown</span>
+      </div>
+
+      <div class="tabs">
+        {% for value, label in statuses %}
+        <a href="?status={{ value }}" class="{% if active_status == value %}is-active{% endif %}">
+          {{ label }}
+        </a>
+        {% endfor %}
+        <a href="?status=all" class="{% if active_status == 'all' %}is-active{% endif %}">All</a>
+      </div>
+
+      <div class="card__body stack">
+        {% for r in requests %}
+        <article class="card" style="border-left:4px solid {% if r.kind == 'complete' %}var(--indigo){% else %}var(--turmeric){% endif %}">
+          <div class="card__body stack">
+
+            <div class="row" style="align-items:baseline;gap:12px;flex-wrap:wrap">
+              <strong>{{ r.get_kind_display }}</strong>
+              <span class="pill pill--{{ r.status }}">{{ r.get_status_display }}</span>
+              <span class="small muted">
+                booking #{{ r.booking_id }} &middot;
+                asked by {{ r.requested_by.username }}
+                ({% if r.by_tutor %}the tutor{% else %}the student{% endif %})
+                &middot; {{ r.created_at|date:"M j, Y" }}
+              </span>
+            </div>
+
+            <dl class="kv">
+              <dt>Student</dt><dd>{{ r.booking.student.username }}</dd>
+              <dt>Tutor</dt><dd>{{ r.booking.tutor.username }}</dd>
+              <dt>Course</dt>
+              <dd>{{ r.booking.months }} month{{ r.booking.months|pluralize }} from
+                  {{ r.booking.date|date:"M j, Y" }},
+                  running to {{ r.booking.natural_end_date|date:"M j, Y" }}</dd>
+              <dt>Paid</dt><dd>৳{{ r.booking.total_paid|floatformat:"0g" }}</dd>
+            </dl>
+
+            <div class="alert alert--info">
+              <strong>Their reason</strong><br>{{ r.reason|linebreaksbr }}
+            </div>
+
+            {% if r.kind == 'terminate' %}
+              {% if r.refund_amount > 0 %}
+              <dl class="kv">
+                <dt>Refund due</dt>
+                <dd><strong>৳{{ r.refund_amount|floatformat:"0g" }}</strong>
+                    &mdash; {{ r.refund_percent }}%, {{ r.refund_tier }}</dd>
+                <dt>Send it via</dt>
+                <dd>
+                  {% if r.payout_method %}
+                    {{ r.get_payout_method_display }}
+                    {% if r.payout_account %}<br><span class="num">{{ r.payout_account }}</span>{% endif %}
+                    {% if r.payout_bank_name %}<br>{{ r.payout_bank_name }}{% endif %}
+                  {% else %}
+                    <span style="color:var(--amber);font-weight:600">Not given yet</span><br>
+                    <span class="xsmall muted">
+                      The tutor ended this booking, so the student was never asked
+                      where to send the money. Contact
+                      {{ r.booking.student.username }}
+                      {% if r.booking.student.email %}({{ r.booking.student.email }}){% endif %}
+                      {% if r.booking.student.phone %}on {{ r.booking.student.phone }}{% endif %},
+                      or have them collect it from the office.
+                    </span>
+                  {% endif %}
+                </dd>
+                {% if r.status == 'approved' %}
+                <dt>Settled</dt>
+                <dd>
+                  {% if r.refund_settled %}
+                    Yes &mdash; {{ r.refund_settled_at|date:"M j, Y" }}
+                  {% else %}
+                    <span style="color:var(--red);font-weight:600">Not yet sent</span>
+                  {% endif %}
+                </dd>
+                {% endif %}
+              </dl>
+              {% else %}
+              <p class="small muted">No refund is due &mdash; {{ r.refund_tier }}.</p>
+              {% endif %}
+            {% endif %}
+
+            {% if r.status == 'pending' %}
+            <div class="stack">
+              <form method="POST" action="/admin-panel/requests/{{ r.id }}/approve/" class="stack">
+                {% csrf_token %}
+                <div class="field">
+                  <label for="note-{{ r.id }}">Note to the requester (optional)</label>
+                  <input type="text" id="note-{{ r.id }}" name="admin_note"
+                         placeholder="Why you accepted or refused this">
+                </div>
+                <div class="row">
+                  <button type="submit" class="btn btn--success btn--sm">
+                    Approve
+                    {% if r.kind == 'complete' %}and complete{% else %}and cancel{% endif %}
+                  </button>
+                  <button type="submit" class="btn btn--danger btn--sm"
+                          formaction="/admin-panel/requests/{{ r.id }}/decline/">Decline</button>
+                </div>
+              </form>
+            </div>
+            {% else %}
+              {% if r.admin_note %}
+              <p class="small"><strong>Your note:</strong> {{ r.admin_note }}</p>
+              {% endif %}
+              <p class="xsmall muted">
+                {{ r.get_status_display }} by {{ r.reviewed_by.username|default:"an admin" }}
+                on {{ r.reviewed_at|date:"M j, Y" }}
+              </p>
+
+              {% if r.needs_payout_details %}
+              <form method="POST" action="/admin-panel/requests/{{ r.id }}/settle/">
+                {% csrf_token %}
+                <button type="submit" class="btn btn--primary btn--sm">
+                  Mark ৳{{ r.refund_amount|floatformat:"0g" }} as refunded
+                </button>
+              </form>
+              {% endif %}
+            {% endif %}
+
+          </div>
+        </article>
+        {% empty %}
+        <p class="muted">Nothing here.</p>
+        {% endfor %}
+      </div>
+    </section>
+
+</div>
+{% endblock %}

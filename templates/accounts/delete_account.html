@@ -1,0 +1,58 @@
+{% extends 'base/luminary_base.html' %}
+{% block title %}Delete account | EduAI{% endblock %}
+{% block page_title %}Delete account{% endblock %}
+{% block nav_profile %}is-active{% endblock %}
+{% block breadcrumbs %}
+<nav class="crumbs" aria-label="Breadcrumb">
+  <a href="/accounts/profile/">My Profile</a> <span aria-hidden="true">/</span> <span>Delete account</span>
+</nav>
+{% endblock %}
+{% block page_subtitle %}
+<p>This removes your account and everything attached to it. It cannot be undone.</p>
+{% endblock %}
+
+{% block content %}
+<div class="container--narrow" style="padding:0">
+<div class="stack">
+
+  <div class="alert alert--error">
+    <div>
+      <strong>What deleting your account removes</strong>
+      <ul style="margin:8px 0 0;padding-left:20px">
+        <li>Your profile and personal details</li>
+        <li>Your booking history and every payment record attached to it</li>
+        {% if user.role == 'tutor' %}<li>Your tutor listing, schedule and reviews</li>{% endif %}
+      </ul>
+    </div>
+  </div>
+
+  <form method="POST" action="/accounts/delete-account/" id="delete-form" class="card">
+    <div class="card__head"><h3>Confirm with your password</h3></div>
+    <div class="card__body stack">
+      {% csrf_token %}
+      <div class="field">
+        <label for="delete-password">Your password</label>
+        <input type="password" name="password" id="delete-password" autocomplete="current-password" required>
+      </div>
+      <label class="choice">
+        <input type="checkbox" id="confirm-check" required>
+        <span>I understand this is permanent and cannot be reversed.</span>
+      </label>
+    </div>
+    <div class="card__foot row">
+      <button type="submit" class="btn btn--danger">Delete my account</button>
+      <a href="/accounts/profile/" class="btn btn--quiet">Keep my account</a>
+    </div>
+  </form>
+
+</div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.getElementById('delete-form').addEventListener('submit', function (e) {
+  if (!confirm('Delete {{ user.username }} permanently? This cannot be undone.')) e.preventDefault();
+});
+</script>
+{% endblock %}

@@ -1,0 +1,480 @@
+@startuml EduAI_ERD
+' ─────────────────────────────────────────────────────────────────────────
+'  EduAI — Tutor Booking Platform
+'  Entity Relationship Diagram
+'
+'  Generated from the Django models, not by hand. To regenerate after a
+'  schema change, re-read the models in accounts/, tutors/, bookings/,
+'  reviews/ and payments/ — every field below corresponds to a real column.
+'
+'  Render with:  plantuml diagrams/online_tutor_management_erd.puml
+'  or paste into https://www.plantuml.com/plantuml
+' ─────────────────────────────────────────────────────────────────────────
+
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "Segoe UI"
+skinparam defaultFontSize 12
+skinparam roundCorner 0
+
+skinparam class {
+  BackgroundColor #FFFFFF
+  BorderColor #26327A
+  BorderThickness 1
+  ArrowColor #26327A
+  FontColor #14183A
+  HeaderBackgroundColor #ECEAF5
+  AttributeFontColor #2A2F52
+  AttributeFontSize 11
+}
+skinparam note {
+  BackgroundColor #FBF4E4
+  BorderColor #8A7038
+  FontColor #14183A
+  FontSize 11
+}
+
+title EduAI — Tutor Booking Platform\nEntity Relationship Diagram
+
+' ═════════════════════════════════════════════════════════════════════════
+'  ACCOUNTS
+' ═════════════════════════════════════════════════════════════════════════
+entity "User" as User <<accounts_user>> {
+  **id** : BigAutoField <<PK>>
+  --
+  username : CharField(150) <<UNIQUE>>
+  password : CharField(128)
+  email : CharField(254)
+  first_name : CharField(150)
+  last_name : CharField(150)
+  --
+  role : CharField(10) <<student | tutor>>
+  is_active : BooleanField = True
+  is_staff : BooleanField = False
+  is_superuser : BooleanField = False
+  --
+  avatar : FileField <<NULL>>
+  phone : CharField(20) <<NULL>>
+  education : CharField(150) <<NULL, legacy — superseded by Education>>
+  bio : TextField <<NULL>>
+  nid_number : CharField(30) <<NULL>>
+  nid_image : FileField <<NULL>>
+  nid_verification_status : CharField(10) <<unverified | pending\n| verified | rejected>>
+  --
+  id_card_number : CharField(40) <<NULL>>
+  id_card_front : FileField <<NULL>>
+  id_card_back : FileField <<NULL>>
+  --
+  date_joined : DateTimeField
+  last_login : DateTimeField <<NULL>>
+}
+
+note right of User
+  Extends Django's AbstractUser and is set as
+  AUTH_USER_MODEL. **role** decides which half of
+  the application a person sees; staff and
+  superuser are a separate, orthogonal axis used
+  only by the hand-rolled admin panel.
+
+  nid_number and nid_image are both required at
+  registration for tutors, optional for students.
+
+  id_card_* is a university ID card image pair, used
+  only to back a self-reported Education entry — not
+  a KYC document like the NID.
+end note
+
+entity "Education" as Education <<accounts_education>> {
+  **id** : BigAutoField <<PK>>
+  --
+  //user_id// : ForeignKey → User <<CASCADE>>
+  --
+  education_level : CharField(20) <<ssc | hsc | undergraduate\n| graduate | mphil | phd | other>>
+  institution : CharField(150)
+  degree : CharField(100) = ''
+  field_of_study : CharField(150) = ''
+  --
+  start_month : PositiveSmallIntegerField <<NULL, 1-12>>
+  start_year : PositiveIntegerField <<NULL>>
+  end_month : PositiveSmallIntegerField <<NULL, 1-12>>
+  end_year : PositiveIntegerField <<NULL>>
+  currently_studying : BooleanField = False
+  --
+  gpa : DecimalField(4,2) <<NULL>>
+  gpa_scale : DecimalField(4,2) <<NULL>>
+  description : TextField = ''
+  document : FileField <<NULL, certificate/transcript>>
+  verification_status : CharField(10) <<unverified | pending\n| verified | rejected>>
+  --
+  created_at : DateTimeField
+  updated_at : DateTimeField
+}
+
+note bottom of Education
+  One qualification, LinkedIn-style — a user can hold
+  several, added, edited and removed independently.
+  SSC/HSC use gpa + field_of_study as "Group";
+  everything above uses degree, field_of_study as
+  "Department/Major", and gpa as CGPA.
+
+  end_year/end_month are kept even while
+  currently_studying — for a student mid-degree they
+  hold the EXPECTED finish, not an actual one, and are
+  corrected once they actually graduate.
+
+  document is an optional scan/PDF of a certificate,
+  transcript or result slip, for whenever a specific
+  entry needs to be verified — distinct from nid_image
+  on User, which verifies the account itself.
+
+  **Tutor eligibility is derived from this table, not
+  stored anywhere**: Education.user_qualifies_for_tutoring()
+  requires at least one row at undergraduate level or
+  above (QUALIFYING_LEVELS) — SSC/HSC alone never
+  qualifies. Enforced at registration (accounts/views.py)
+  and again before a TutorProfile can be created
+  (tutors/views.py), so neither check can be bypassed
+  by skipping the other.
+end note
+
+' ═════════════════════════════════════════════════════════════════════════
+'  TUTORS
+' ═════════════════════════════════════════════════════════════════════════
+entity "TutorProfile" as TutorProfile <<tutors_tutorprofile>> {
+  **id** : BigAutoField <<PK>>
+  --
+  //user_id// : OneToOneField → User <<UNIQUE, CASCADE>>
+  --
+  bio : TextField
+  rating : FloatField = 0
+  --
+  created_at : DateTimeField
+  updated_at : DateTimeField
+}
+
+entity "Course" as Course <<tutors_course>> {
+  **id** : BigAutoField <<PK>>
+  --
+  //tutor_id// : ForeignKey → User <<CASCADE>>
+  --
+  subject : CharField(60) <<searchable category>>
+  name : CharField(120) <<the tutor's wording>>
+  --
+  days : CharField(50) <<'0,2,4' — Sun=0 … Sat=6>>
+  time : TimeField
+  months : PositiveIntegerField = 1
+  --
+  monthly_rate : DecimalField(10,2)
+  is_active : BooleanField = True
+  --
+  created_at : DateTimeField
+  updated_at : DateTimeField
+}
+
+note bottom of Course
+  One thing a tutor teaches, at one price, in one
+  weekly slot. Subject and price used to sit on
+  TutorProfile, which allowed a tutor exactly one of
+  each; moving them here is what lets someone teach
+  Physics for one fee and Maths for another.
+
+  **subject** is the searchable category and **name**
+  is the tutor's own wording — "Physics" is what a
+  student searches for, "HSC Physics 1st Paper" is
+  what the tutor calls it.
+
+  A course holds ONE slot, so it carries one active
+  booking at a time: a tutor cannot teach two
+  students in the same hour. Two students means two
+  courses. `is_bookable` is is_active AND nobody
+  currently in the slot.
+
+  Unpublished rather than deleted when it has a
+  booking, so the student's booking keeps pointing
+  at something real.
+
+  Note the FK points at **User**, not TutorProfile.
+end note
+
+note bottom of TutorProfile
+  Who the tutor is, not what they teach — that moved
+  to Course. What is left is the introduction they
+  write and the rating they earn.
+
+  **rating** is derived, not entered: saving a Review
+  recalculates it as the mean of every review across
+  everything they teach.
+
+  Name, photo, phone and NID come from User.
+end note
+
+' ═════════════════════════════════════════════════════════════════════════
+'  BOOKINGS
+' ═════════════════════════════════════════════════════════════════════════
+entity "Booking" as Booking <<bookings_booking>> {
+  **id** : BigAutoField <<PK>>
+  --
+  //student_id// : ForeignKey → User <<CASCADE>>
+  //tutor_id//   : ForeignKey → User <<CASCADE>>
+  //course_id//  : ForeignKey → Course <<NULL, SET_NULL>>
+  --
+  date : DateField <<course start>>
+  months : PositiveIntegerField = 1
+  status : CharField(10) <<pending | confirmed | completed\n| rejected | cancelled>>
+  --
+  agreed_monthly_rate : DecimalField(10,2) <<NULL>>
+  meet_link : CharField(200) = ''
+  tutor_message : TextField = ''
+  --
+  created_at : DateTimeField
+  updated_at : DateTimeField
+}
+
+note right of Booking
+  A course of **months** duration, not one session.
+
+  **agreed_monthly_rate** is the rate snapshotted from
+  the COURSE when the booking was made. The model
+  exposes it as `monthly_rate`, falling back to the
+  course only for rows written before the snapshot —
+  which is why deleting a course cannot reprice
+  anything, and why `course` is SET_NULL rather than
+  CASCADE: removing a course must not erase the
+  history of who studied it and what they paid.
+
+  Derived, not stored — computed from the payments:
+    total_amount  = monthly_rate × months
+    total_paid    = Σ approved payments
+    balance_due   = total_amount − total_paid
+    is_fully_paid = balance_due ≤ 0
+    is_payable    = status is 'confirmed' and not fully paid
+    is_cancellable
+
+  **is_payable** is the rule that money may only be taken
+  once the tutor has accepted: there is no refund path,
+  so a student must not be able to pay for a request
+  that can still be declined.
+end note
+
+entity "BookingRequest" as BookingRequest <<bookings_bookingrequest>> {
+  **id** : BigAutoField <<PK>>
+  --
+  //booking_id//      : ForeignKey → Booking <<CASCADE>>
+  //requested_by_id// : ForeignKey → User <<CASCADE>>
+  --
+  kind : CharField(10) <<complete | terminate>>
+  reason : TextField
+  status : CharField(10) <<pending | approved | declined>>
+  --
+  refund_percent : PositiveIntegerField = 0
+  refund_amount : DecimalField(10,2) = 0
+  refund_tier : CharField(60) = ''
+  --
+  payout_method : CharField(10) <<bkash | nagad | rocket\n| bank | office>>
+  payout_account : CharField(40) = ''
+  payout_bank_name : CharField(80) = ''
+  refund_settled : BooleanField = False
+  refund_settled_at : DateTimeField <<NULL>>
+  --
+  admin_note : TextField = ''
+  //reviewed_by_id// : ForeignKey → User <<NULL, SET_NULL>>
+  reviewed_at : DateTimeField <<NULL>>
+  --
+  created_at : DateTimeField
+  updated_at : DateTimeField
+  ..
+  **UNIQUE** (booking) WHERE status = 'pending'
+  → constraint: one_open_request_per_booking
+}
+
+note bottom of BookingRequest
+  Either party asking to end a booking before its
+  agreed end date. An admin verifies the stated
+  reason; nothing moves until they do.
+
+  On approval: 'complete' completes the booking,
+  which is what lets the student leave a review;
+  'terminate' cancels it and a refund falls due.
+
+  **The refund figures are a SNAPSHOT**, frozen when
+  the request was made, not recomputed at approval.
+  A student quoted 75% on the last day of week one
+  must not silently drop to 50% because an admin
+  read the request on Monday. The policy that
+  produced them lives in bookings/refunds.py:
+
+    before the course starts   100%
+    within the first week       75%
+    within the second week      50%
+    weeks three and four        25%
+    after four weeks              0%
+
+  A TUTOR-initiated termination ignores that ladder
+  entirely — the ladder prices a student changing
+  their mind, which is not what happened — and
+  refunds the untaught portion pro rata.
+
+  payout_* records where the money should go, or
+  that the student will collect it in person.
+  refund_settled is set by hand once it is sent;
+  there is no automated payout.
+end note
+
+' ═════════════════════════════════════════════════════════════════════════
+'  PAYMENTS
+' ═════════════════════════════════════════════════════════════════════════
+entity "Payment" as Payment <<payments_payment>> {
+  **id** : BigAutoField <<PK>>
+  --
+  //booking_id// : ForeignKey → Booking <<CASCADE>>
+  --
+  amount : DecimalField(10,2)
+  commission : DecimalField(10,2) = 0
+  tutor_income : DecimalField(10,2) = 0
+  is_first_payment : BooleanField = False
+  --
+  status : CharField(10) <<initiated | pending\n| approved | rejected>>
+  payment_method : CharField(12) <<bkash | nagad | rocket\n| sslcommerz>>
+  --
+  sender_number : CharField(20) = ''
+  transaction_id : TextField = ''
+  --
+  gateway_tran_id : CharField(40) = ''
+  gateway_val_id : CharField(80) = ''
+  gateway_bank_tran_id : CharField(80) = ''
+  --
+  created_at : DateTimeField
+  updated_at : DateTimeField
+  ..
+  **UNIQUE** (booking) WHERE status = 'pending'
+  → constraint: one_pending_payment_per_booking
+}
+
+note right of Payment
+  **Many payments per booking** — a course is paid in
+  instalments, so this is a ForeignKey, not a
+  OneToOne. Getting this wrong is the single most
+  consequential misreading of this schema.
+
+  **Commission** is charged against how much of the
+  first month is still uncovered:
+    · the slice covering the rest of month 1 → 50%
+      (broker 40% + platform 10%)
+    · everything beyond month 1 → 10% (platform)
+  computed by Payment.calculate_commission() and
+  stored on the row at approval time.
+
+  **Two payment routes share this table**, and the
+  status vocabulary keeps them apart:
+
+  · 'initiated' — a checkout was opened at SSLCommerz
+    and nothing has come back. No money is known to
+    have moved. A customer who closes the card page
+    at the OTP step leaves one of these behind. Only
+    the validation API may move it on; an admin must
+    never be offered an Approve button for one.
+  · 'pending' — the MANUAL route only. A student has
+    submitted a transaction_id and a human is being
+    asked to check it against the bank record.
+
+  Manual (bkash/nagad/rocket): approved by hand.
+  SSLCommerz: the gateway_* columns hold the
+  gateway's own references, and a payment is only
+  ever approved after a server-to-server call to
+  SSLCommerz's validation API — never on the strength
+  of the callback POST, which is public and forgeable.
+
+  The partial unique constraint stops a student
+  queueing two unreviewed payments at once. It covers
+  'pending' only, so an abandoned checkout cannot
+  lock anyone out of trying again.
+end note
+
+' ═════════════════════════════════════════════════════════════════════════
+'  REVIEWS
+' ═════════════════════════════════════════════════════════════════════════
+entity "Review" as Review <<reviews_review>> {
+  **id** : BigAutoField <<PK>>
+  --
+  //booking_id// : OneToOneField → Booking <<UNIQUE, CASCADE>>
+  --
+  rating : IntegerField <<1 … 5>>
+  comment : TextField
+  --
+  created_at : DateTimeField
+}
+
+note bottom of Review
+  One review per booking, and only once the booking
+  reaches 'completed' — which itself requires the
+  course period to have elapsed. The student writes
+  it; the tutor cannot.
+
+  Saving one recalculates TutorProfile.rating.
+end note
+
+' ═════════════════════════════════════════════════════════════════════════
+'  ASSISTANT
+' ═════════════════════════════════════════════════════════════════════════
+entity "ChatMessage" as ChatMessage <<chatbot_chatmessage>> {
+  **id** : BigAutoField <<PK>>
+  --
+  //user_id// : ForeignKey → User <<NULL, SET_NULL>>
+  session_key : CharField(40) = ''
+  --
+  question : TextField
+  intent : CharField(40) = ''
+  confidence : FloatField = 0.0
+  answered : BooleanField = False
+  --
+  asked_at : DateTimeField
+}
+
+note bottom of ChatMessage
+  What people asked the assistant. `user` is null for
+  a visitor who is not logged in; `session_key` still
+  groups their exchange.
+
+  **The answer is deliberately NOT stored.** Answers
+  can contain the asker's own balance and refund
+  figures; the question cannot. Keeping only the
+  question is what makes this log safe to read.
+
+  `answered = False` rows are the point of the table:
+  they are the only reliable guide to what the
+  knowledge base is missing. Guessing at what users
+  will ask is how FAQ pages end up answering
+  questions nobody has.
+
+  The assistant itself holds no state here — it is
+  pure retrieval over chatbot/knowledge.py plus live
+  reads of the asker's own records.
+end note
+
+' ═════════════════════════════════════════════════════════════════════════
+'  RELATIONSHIPS
+' ═════════════════════════════════════════════════════════════════════════
+User        ||--o| TutorProfile  : "tutor_profile"
+User        ||--o{ Education     : "educations"
+User        ||--o{ Course        : "courses"
+User        ||--o{ Booking       : "student_bookings"
+User        ||--o{ Booking       : "tutor_bookings"
+Course      o--o{ Booking       : "bookings\n(SET_NULL)"
+Booking     ||--o{ Payment       : "payments\n(instalments)"
+Booking     ||--o| Review        : "review"
+Booking     ||--o{ BookingRequest : "requests\n(end early)"
+User        ||--o{ BookingRequest : "booking_requests"
+User        ||--o{ BookingRequest : "reviewed_requests\n(SET_NULL)"
+User        ||--o{ ChatMessage    : "chat_messages\n(SET_NULL)"
+
+legend right
+  |= Notation |= Meaning |
+  | **id** | Primary key |
+  | //field_id// | Foreign key |
+  | <&#124;&#124;--&#124;&#124;> | One to exactly one |
+  | <&#124;&#124;--o&#124;> | One to zero-or-one |
+  | <&#124;&#124;--o{> | One to zero-or-many |
+  | Derived | A model property, not a column |
+endlegend
+
+@enduml

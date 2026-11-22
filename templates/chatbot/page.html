@@ -1,0 +1,95 @@
+{% extends 'base/luminary_base.html' %}
+{% block title %}Assistant | EduAI{% endblock %}
+
+{% block pagehead %}
+<div class="pagehead">
+  <div class="container">
+    <div class="pagehead__title">
+      <h1>Assistant</h1>
+    </div>
+    <p>Ask about tutors, pricing, payments or refunds. If you are logged in I
+       can also look up your own bookings and what you owe.</p>
+  </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="stack" style="max-width:760px">
+
+  <section class="card">
+    <div class="card__body">
+      <div class="chatlog" id="chatlog">
+        {% if not history %}
+        <div class="chatmsg chatmsg--bot">
+          <p>Hello. Ask me anything about EduAI — or start with one of these.</p>
+        </div>
+        {% endif %}
+
+        {% for msg in history %}
+        <div class="chatmsg chatmsg--{{ msg.who }}">
+          <p>{{ msg.text|linebreaksbr }}</p>
+          {% if msg.actions %}
+          <div class="chatactions">
+            {% for a in msg.actions %}
+            <a href="{{ a.url }}" class="btn btn--secondary btn--sm">{{ a.label }}</a>
+            {% endfor %}
+          </div>
+          {% endif %}
+          {% if msg.follow_ups %}
+          <div class="chatchips">
+            {% for f in msg.follow_ups %}
+            <form method="POST" class="inline-form">{% csrf_token %}
+              <input type="hidden" name="question" value="{{ f }}">
+              <button type="submit" class="chip">{{ f }}</button>
+            </form>
+            {% endfor %}
+          </div>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+
+      {% if not history %}
+      <div class="chatchips" style="margin-top:16px">
+        {% for s in starters %}
+        <form method="POST" class="inline-form">{% csrf_token %}
+          <input type="hidden" name="question" value="{{ s }}">
+          <button type="submit" class="chip">{{ s }}</button>
+        </form>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+
+    <div class="card__foot">
+      <form method="POST" class="chatform">
+        {% csrf_token %}
+        <label class="sr-only" for="question">Your question</label>
+        <input type="text" id="question" name="question" autocomplete="off"
+               placeholder="Ask about tutors, payments, refunds…" required
+               maxlength="400">
+        <button type="submit" class="btn btn--primary">Ask</button>
+      </form>
+      {% if history %}
+      <a href="?clear=1" class="btn btn--quiet btn--sm">Clear</a>
+      {% endif %}
+    </div>
+  </section>
+
+  <p class="xsmall muted">
+    This assistant answers from EduAI's own knowledge and your records. It does
+    not guess — if it does not know something, it says so.
+  </p>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // Keep the newest message in view after each exchange.
+  (function () {
+    var log = document.getElementById('chatlog');
+    if (log) { log.scrollTop = log.scrollHeight; }
+  })();
+</script>
+{% endblock %}

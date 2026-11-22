@@ -1,0 +1,110 @@
+{% extends 'base/luminary_base.html' %}
+{% block title %}Find a tutor | EduAI{% endblock %}
+{% block page_title %}Find a Tutor{% endblock %}
+{% block nav_tutors %}is-active{% endblock %}
+{% block nav_browse %}is-active{% endblock %}
+{% block page_subtitle %}
+<p>Browse qualified tutors and book a course by the month.</p>
+{% endblock %}
+
+{% block content %}
+<div class="stack">
+
+  <form method="get" action="/tutors/" class="card">
+    <div class="card__body">
+      <div class="filterbar">
+        <div class="field">
+          <label for="f-search">Name or subject</label>
+          <input type="search" name="search" id="f-search" value="{{ search }}" placeholder="Mathematics, Class 9…">
+        </div>
+        <div class="field">
+          <label for="f-subject">Subject</label>
+          <input type="text" name="subject" id="f-subject" value="{{ subject }}"
+                 list="subject-options" placeholder="Any subject">
+          <datalist id="subject-options">
+            {% for option in subjects %}<option value="{{ option }}">{% endfor %}
+          </datalist>
+        </div>
+        <div class="field">
+          <label for="f-rating">Minimum rating</label>
+          <select name="rating" id="f-rating">
+            <option value="">Any rating</option>
+            <option value="4" {% if rating == '4' %}selected{% endif %}>4.0 and above</option>
+            <option value="3" {% if rating == '3' %}selected{% endif %}>3.0 and above</option>
+            <option value="2" {% if rating == '2' %}selected{% endif %}>2.0 and above</option>
+          </select>
+        </div>
+        <div class="row">
+          <button type="submit" class="btn btn--primary"><span class="ms" aria-hidden="true">tune</span> Apply</button>
+          {% if search or subject or rating %}
+          <a href="/tutors/" class="btn btn--quiet">Clear</a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </form>
+
+  {% if tutors %}
+  <section>
+    <div class="sectionhead">
+      <h2 style="font-size:1rem">{{ tutors|length }} tutor{{ tutors|length|pluralize }} available</h2>
+    </div>
+
+    <div class="tutorgrid">
+      {% for tutor in tutors %}
+      <article class="tcard">
+        <div class="tcard__strip"></div>
+        <div class="tcard__body">
+          <div class="tcard__who">
+            {% if tutor.avatar %}
+              <img src="{{ tutor.avatar.url }}" alt="" class="avatar avatar--lg">
+            {% else %}
+              <span class="avatar avatar--lg">{{ tutor.username|upper|first }}</span>
+            {% endif %}
+            <div style="min-width:0">
+              <h3 class="tcard__name">{{ tutor.get_full_name|default:tutor.username }}</h3>
+              <p class="tcard__subjects">{% for subject in tutor.tutor_profile.subjects %}{% if not forloop.first %} &middot; {% endif %}{{ subject }}{% empty %}No courses published yet{% endfor %}</p>
+              {% if tutor.tutor_profile.rating %}
+              <span class="rating">
+                <span class="rating__stars">★</span>
+                <span class="rating__value num">{{ tutor.tutor_profile.rating }}</span>
+                <span class="rating__count">/5</span>
+              </span>
+              {% else %}
+              <span class="xsmall muted">No reviews yet</span>
+              {% endif %}
+            </div>
+          </div>
+
+          {% if tutor.tutor_profile.bio %}
+          <p class="tcard__bio">{{ tutor.tutor_profile.bio }}</p>
+          {% endif %}
+
+          <div class="tcard__foot">
+            <div>
+              {% if tutor.tutor_profile.lowest_rate %}
+              <p class="xsmall muted">Monthly rate from</p>
+              <p class="tcard__price num">৳{{ tutor.tutor_profile.lowest_rate|floatformat:"0g" }}</p>
+              {% else %}
+              <p class="xsmall muted">No courses yet</p>
+              {% endif %}
+            </div>
+            <a href="/tutors/{{ tutor.id }}/" class="btn btn--primary btn--sm">View Profile</a>
+          </div>
+        </div>
+      </article>
+      {% endfor %}
+    </div>
+  </section>
+
+  {% else %}
+  <div class="empty">
+    <span class="ms empty__icon" aria-hidden="true">school</span>
+    <h3>No tutors match your search</h3>
+    <p>Try a different subject, or clear the filters to see everyone teaching right now.</p>
+    <a href="/tutors/" class="btn btn--primary">Show all tutors</a>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

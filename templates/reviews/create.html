@@ -1,0 +1,44 @@
+{% extends 'base/luminary_base.html' %}
+{% block title %}Write a review | EduAI{% endblock %}
+{% block page_title %}Write a review{% endblock %}
+{% block nav_bookings %}is-active{% endblock %}
+{% block breadcrumbs %}
+<nav class="crumbs" aria-label="Breadcrumb">
+  <a href="/bookings/">My Bookings</a> <span aria-hidden="true">/</span>
+  <a href="/bookings/{{ booking.id }}/">Booking #{{ booking.id }}</a>
+  <span aria-hidden="true">/</span> <span>Review</span>
+</nav>
+{% endblock %}
+{% block page_subtitle %}
+<p>How was learning with {{ tutor.get_full_name|default:tutor.username }}? Your review helps other students choose.</p>
+{% endblock %}
+
+{% block content %}
+<div class="container--narrow" style="padding:0">
+<form method="POST" action="" class="card">
+  <div class="card__body stack">
+    {% csrf_token %}
+
+    <div class="field">
+      <label for="f-rating">Your rating</label>
+      <select name="rating" id="f-rating" required>
+        <option value="" disabled {% if not form.rating %}selected{% endif %}>Choose a rating…</option>
+        {% for value, label in rating_choices %}
+        <option value="{{ value }}" {% if form.rating == value %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="field">
+      <label for="f-comment">Your review</label>
+      <textarea name="comment" id="f-comment" rows="5" required
+                placeholder="What did you learn? How did the tutor teach? Would you recommend them?">{{ form.comment }}</textarea>
+    </div>
+  </div>
+  <div class="card__foot row">
+    <button type="submit" class="btn btn--primary">Publish review</button>
+    <a href="/bookings/{{ booking.id }}/" class="btn btn--quiet">Cancel</a>
+  </div>
+</form>
+</div>
+{% endblock %}

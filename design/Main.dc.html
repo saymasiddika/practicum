@@ -1,0 +1,121 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&display=swap">
+  <style>
+    body { margin: 0; font-family: 'Hind Siliguri', system-ui, sans-serif; background: #ffffff; }
+    a { color: #26327a; } a:hover { color: #14183a; }
+    * { box-sizing: border-box; }
+  </style>
+</helmet>
+
+<div style="width: 980px; background: #ffffff; color: #14183a;">
+
+  <!-- the matra: content hangs from a rule, as Bengali letters do -->
+  <div style="height: 4px; background: #14183a;"></div>
+
+  <div style="display: flex; align-items: baseline; gap: 28px; padding: 14px 40px 0;">
+    <div style="font-size: 21px; font-weight: 700; letter-spacing: -0.02em;">EduAI</div>
+    <div style="display: flex; gap: 20px; font-size: 14px; font-weight: 500; color: #4a4f70;">
+      <span>Find tutors</span><span>How it works</span><span>Teach</span>
+    </div>
+    <div style="flex-grow: 1;"></div>
+    <div style="display: flex; gap: 14px; align-items: center; font-size: 14px; font-weight: 600;">
+      <span>Log in</span>
+      <span style="background: #14183a; color: #fff; padding: 8px 16px;">Join free</span>
+    </div>
+  </div>
+
+  <div style="display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 44px; padding: 44px 40px 40px;">
+    <div>
+      <h1 style="font-size: 60px; line-height: 1.02; letter-spacing: -0.035em; font-weight: 700; margin: 0; text-wrap: balance;">
+        Find the tutor,<br>agree the month,<br>pay as you go.
+      </h1>
+      <p style="font-size: 17px; line-height: 1.55; color: #4a4f70; margin: 20px 0 0; max-width: 46ch;">
+        Every tutor sets one monthly rate. You book whole months, pay through bKash,
+        Nagad or Rocket — in full or in instalments — and the price you agree never moves.
+      </p>
+
+      <div style="display: flex; margin-top: 28px; border: 2px solid #14183a; max-width: 460px;">
+        <div style="flex-grow: 1; padding: 14px 16px; font-size: 15px; color: #8b8fa8;">Physics, Class 9…</div>
+        <div style="background: #14183a; color: #fff; padding: 14px 26px; font-size: 15px; font-weight: 600;">Search</div>
+      </div>
+    </div>
+
+    <div style="border-top: 4px solid #d99a2b; padding-top: 18px;">
+      <div style="font-size: 12px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: #8a7038;">
+        What a month costs
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 0; margin-top: 14px; font-size: 15px;">
+        <div style="display: flex; justify-content: space-between; padding: 11px 0; border-bottom: 1px solid #e3e2dc;">
+          <span style="color: #4a4f70;">Tutor's rate</span><span style="font-weight: 600;">৳4,000 / month</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; padding: 11px 0; border-bottom: 1px solid #e3e2dc;">
+          <span style="color: #4a4f70;">First month fee</span><span style="font-weight: 600;">50%</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; padding: 11px 0; border-bottom: 1px solid #e3e2dc;">
+          <span style="color: #4a4f70;">Every month after</span><span style="font-weight: 600;">10%</span>
+        </div>
+      </div>
+      <p style="font-size: 13px; line-height: 1.5; color: #6b6f8a; margin: 14px 0 0;">
+        Shown in full before you pay. Nothing is charged until an admin confirms
+        your transaction ID.
+      </p>
+    </div>
+  </div>
+
+  <!-- listing: rules, not cards -->
+  <div style="border-top: 4px solid #14183a; margin: 0 40px;"></div>
+  <div style="display: flex; align-items: baseline; gap: 16px; padding: 16px 40px 10px;">
+    <div style="font-size: 22px; font-weight: 700; letter-spacing: -0.02em;">Tutors teaching now</div>
+    <div style="flex-grow: 1;"></div>
+    <div style="font-size: 14px; font-weight: 600; color: #26327a;">See all 34 →</div>
+  </div>
+
+  <div style="display: flex; flex-direction: column; padding: 0 40px 36px;">
+    <sc-for list="{{tutors}}" as="t" hint-placeholder-count="3">
+      <div style="display: grid; grid-template-columns: 54px minmax(0, 1fr) 150px 130px; gap: 20px; align-items: center; padding: 18px 0; border-bottom: 1px solid #dcdbd4;">
+        <div style="width: 54px; height: 54px; background: #eceaf5; color: #26327a; display: grid; place-items: center; font-size: 20px; font-weight: 700;">{{t.initial}}</div>
+        <div>
+          <div style="font-size: 17px; font-weight: 600;">{{t.name}}</div>
+          <div style="font-size: 14px; color: #6b6f8a; margin-top: 2px;">{{t.blurb}}</div>
+        </div>
+        <div>
+          <div style="font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #8a7038;">{{t.subject}}</div>
+          <div style="font-size: 14px; color: #4a4f70; margin-top: 3px;">{{t.days}}</div>
+        </div>
+        <div style="text-align: right;">
+          <div style="font-size: 19px; font-weight: 700;">{{t.rate}}</div>
+          <div style="font-size: 13px; color: #6b6f8a;">per month</div>
+        </div>
+      </div>
+    </sc-for>
+  </div>
+
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      tutors: [
+        { initial: 'A', name: 'Ayesha Rahman', subject: 'Mathematics', rate: '৳4,500',
+          days: 'Sun · Tue · Thu, 6pm', blurb: 'HSC calculus and algebra. Ten years in the classroom.' },
+        { initial: 'R', name: 'Rakib Hasan', subject: 'Physics', rate: '৳4,000',
+          days: 'Mon · Wed, 7pm', blurb: 'Builds intuition first, formulas second.' },
+        { initial: 'N', name: 'Nusrat Jahan', subject: 'English', rate: '৳3,500',
+          days: 'Sat · Sun, 5pm', blurb: 'IELTS and spoken English, beginner to advanced.' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

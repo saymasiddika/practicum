@@ -1,0 +1,133 @@
+{% extends 'base/luminary_base.html' %}
+{% block nav_courses %}is-active{% endblock %}
+{% block title %}{% if is_new %}Add a course{% else %}Edit course{% endif %} | EduAI{% endblock %}
+
+{% block pagehead %}
+<div class="pagehead">
+  <div class="container">
+    <div class="pagehead__title">
+      <h1>{% if is_new %}Add a course{% else %}Edit “{{ course.name }}”{% endif %}</h1>
+    </div>
+    <p>One subject, one weekly slot, one price. Students book this course
+       directly, so what you put here is what they agree to.</p>
+  </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="stack" style="max-width:680px">
+
+  <form method="POST" class="card">
+    {% csrf_token %}
+    <div class="card__body stack">
+
+      <div class="field">
+        <label for="subject">Subject</label>
+        <input type="text" id="subject" name="subject" required maxlength="60"
+               list="subject-suggestions" placeholder="Physics"
+               value="{% if form %}{{ form.subject }}{% else %}{{ course.subject|default:'' }}{% endif %}">
+        <datalist id="subject-suggestions">
+          <option value="Physics"><option value="Chemistry"><option value="Biology">
+          <option value="Mathematics"><option value="Higher Mathematics">
+          <option value="English"><option value="Bangla"><option value="ICT">
+          <option value="Accounting"><option value="Economics">
+        </datalist>
+        <p class="xsmall muted">This is what students search for, so keep it a
+           plain subject name.</p>
+      </div>
+
+      <div class="field">
+        <label for="name">Course name</label>
+        <input type="text" id="name" name="name" required maxlength="120"
+               placeholder="HSC Physics 1st Paper"
+               value="{% if form %}{{ form.name }}{% else %}{{ course.name|default:'' }}{% endif %}">
+        <p class="xsmall muted">Your own wording — the level, the syllabus,
+           whatever tells a student what they are getting.</p>
+      </div>
+
+      <fieldset class="field">
+        <legend>Which days?</legend>
+        <div class="row" style="gap:16px">
+          {% for value, label in day_choices %}
+          <label class="choice">
+            <input type="checkbox" name="days" value="{{ value }}"
+                   {% if value in selected_days %}checked{% endif %}>
+            <span>{{ label }}</span>
+          </label>
+          {% endfor %}
+        </div>
+      </fieldset>
+
+      <div class="grid grid--2">
+        <div class="field">
+          <label for="time">Start time</label>
+          <input type="time" id="time" name="time" required
+                 value="{% if form %}{{ form.time }}{% else %}{{ course.time|time:'H:i'|default:'' }}{% endif %}">
+        </div>
+        <div class="field">
+          <label for="months">Course length (months)</label>
+          <input type="number" id="months" name="months" required min="1" max="24"
+                 value="{% if form %}{{ form.months }}{% else %}{{ course.months|default:'3' }}{% endif %}">
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="monthly_rate">Monthly fee</label>
+        <div class="field__prefix">
+          <span>৳</span>
+          <input type="number" id="monthly_rate" name="monthly_rate" required
+                 min="1" step="1" placeholder="5000"
+                 value="{% if form %}{{ form.monthly_rate }}{% else %}{{ course.monthly_rate|floatformat:0|default:'' }}{% endif %}">
+        </div>
+        <p class="xsmall muted" id="total-hint"></p>
+      </div>
+
+      {% if not is_new %}
+      <label class="choice">
+        <input type="checkbox" name="is_active" {% if form %}{% if form.is_active %}checked{% endif %}{% elif course.is_active %}checked{% endif %}>
+        <span>Published — students can find and book this</span>
+      </label>
+      {% endif %}
+
+    </div>
+
+    <div class="card__foot">
+      <button type="submit" class="btn btn--primary">
+        {% if is_new %}Upload course{% else %}Save changes{% endif %}
+      </button>
+      <a href="/tutors/courses/" class="btn btn--quiet">Cancel</a>
+    </div>
+  </form>
+
+  {% if not is_new and course.active_booking %}
+  <div class="alert alert--info">
+    <strong>A student is taking this course.</strong> Changing the price here
+    will not change what they agreed — their booking keeps the fee it was made
+    at.
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // Show what the whole course comes to, so the tutor prices it deliberately.
+  (function () {
+    var rate = document.getElementById('monthly_rate');
+    var months = document.getElementById('months');
+    var hint = document.getElementById('total-hint');
+    if (!rate || !months || !hint) { return; }
+
+    function update() {
+      var r = parseFloat(rate.value), m = parseInt(months.value, 10);
+      if (!r || !m || r < 0 || m < 0) { hint.textContent = ''; return; }
+      hint.textContent = 'A student pays ৳' + (r * m).toLocaleString()
+                       + ' in total over ' + m + ' month' + (m === 1 ? '' : 's') + '.';
+    }
+    rate.addEventListener('input', update);
+    months.addEventListener('input', update);
+    update();
+  })();
+</script>
+{% endblock %}

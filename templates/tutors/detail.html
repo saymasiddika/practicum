@@ -1,0 +1,152 @@
+{% extends 'base/luminary_base.html' %}
+{% block title %}{{ tutor.get_full_name|default:tutor.username }} | EduAI{% endblock %}
+{% block page_title %}{{ tutor.get_full_name|default:tutor.username }}{% endblock %}
+{% block nav_tutors %}is-active{% endblock %}
+{% block nav_browse %}is-active{% endblock %}
+
+{% block breadcrumbs %}
+<nav class="crumbs" aria-label="Breadcrumb">
+  <a href="/">Home</a> <span aria-hidden="true">/</span>
+  <a href="/tutors/">Find Tutors</a> <span aria-hidden="true">/</span>
+  <span>{{ tutor.get_full_name|default:tutor.username }}</span>
+</nav>
+{% endblock %}
+
+{% block page_subtitle %}
+{% if tutor.tutor_profile %}
+<div class="row" style="margin-top:10px">
+  {% for subject in tutor.tutor_profile.subjects %}
+  <span class="pill pill--confirmed pill--wrap">{{ subject }}</span>
+  {% endfor %}
+  {% if tutor.tutor_profile.rating %}
+  <span class="rating">
+    <span class="rating__stars">★★★★★</span>
+    <span class="rating__value num">{{ tutor.tutor_profile.rating }}</span>
+    <span class="rating__count">out of 5</span>
+  </span>
+  {% else %}
+  <span class="small muted">No reviews yet</span>
+  {% endif %}
+  {% if tutor.tutor_profile.lowest_rate %}
+  <span class="small muted">·</span>
+  <span class="small">from <span class="money num">৳{{ tutor.tutor_profile.lowest_rate|floatformat:"0g" }}</span> per month</span>
+  {% endif %}
+</div>
+{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="grid grid--detail">
+
+  <div class="stack">
+    {% if tutor.tutor_profile.bio %}
+    <section class="card">
+      <div class="card__head"><h3>About {{ tutor.first_name|default:tutor.username }}</h3></div>
+      <div class="card__body"><p>{{ tutor.tutor_profile.bio|linebreaksbr }}</p></div>
+    </section>
+    {% endif %}
+
+    <section class="card">
+      <div class="card__head">
+        <h3>Courses</h3>
+        <span class="spacer"></span>
+        <span class="small muted">{{ courses|length }} on offer</span>
+      </div>
+      {% if courses %}
+      <div class="divide">
+        {% for course in courses %}
+        <div class="card__body stack-s">
+          <div class="row row--between">
+            <div>
+              <div class="strong">{{ course.name }}</div>
+              <div class="xsmall muted">{{ course.subject }} &middot; {{ course.schedule_display }}
+                 &middot; {{ course.months }} month{{ course.months|pluralize }}</div>
+            </div>
+            <div style="text-align:right">
+              <div class="money num">৳{{ course.monthly_rate|floatformat:"0g" }}</div>
+              <div class="xsmall muted">per month</div>
+            </div>
+          </div>
+          <div class="row">
+            {% if course.is_bookable %}
+              {% if user.role == 'student' %}
+              <a href="/bookings/create/?course={{ course.id }}" class="btn btn--primary btn--sm">Book this course</a>
+              {% elif not user.is_authenticated %}
+              <a href="/accounts/login/" class="btn btn--secondary btn--sm">Sign in to book</a>
+              {% endif %}
+              <span class="xsmall muted">৳{{ course.total_price|floatformat:"0g" }} in total</span>
+            {% else %}
+              <span class="pill pill--cancelled">Already taken</span>
+              <span class="xsmall muted">This slot has a student on it.</span>
+            {% endif %}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="card__body">
+        <p class="muted">This tutor has not published any courses yet, so there
+           is nothing to book at the moment.</p>
+      </div>
+      {% endif %}
+    </section>
+
+    <section class="card">
+      <div class="card__head"><h3>Student reviews</h3></div>
+      {% if reviews %}
+      <div class="divide">
+        {% for review in reviews %}
+        <div class="card__body stack-s">
+          <div class="row">
+            <span class="avatar avatar--sm">{{ review.booking.student.username|upper|first }}</span>
+            <span class="strong">{{ review.booking.student.get_full_name|default:review.booking.student.username }}</span>
+            <span class="rating__stars">{% for i in "12345" %}{% if forloop.counter <= review.rating %}★{% else %}☆{% endif %}{% endfor %}</span>
+            <span class="spacer"></span>
+            <span class="xsmall muted">{{ review.created_at|date:"M d, Y" }}</span>
+          </div>
+          <p class="small">{{ review.comment }}</p>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="card__body"><p class="muted">No reviews yet. Reviews appear once a student completes a course.</p></div>
+      {% endif %}
+    </section>
+  </div>
+
+  <aside class="stack">
+    <div class="card">
+      <div class="card__body stack">
+        {% if tutor.tutor_profile %}
+        {% if tutor.tutor_profile.lowest_rate %}
+        <div>
+          <div class="eyebrow">Courses from</div>
+          <div class="stat__value">৳{{ tutor.tutor_profile.lowest_rate|floatformat:"0g" }}</div>
+          <p class="small muted">Per month. Each course is priced separately —
+             pay in full or in instalments.</p>
+        </div>
+        {% endif %}
+        <dl class="deflist">
+          <dt>Teaches</dt>
+          <dd>{% for subject in tutor.tutor_profile.subjects %}{% if not forloop.first %}, {% endif %}{{ subject }}{% empty %}Nothing published yet{% endfor %}</dd>
+          <dt>Courses</dt><dd class="num">{{ courses|length }}</dd>
+          <dt>Rating</dt><dd class="num">{{ tutor.tutor_profile.rating }} / 5</dd>
+        </dl>
+        {% endif %}
+        {% if user.role == 'student' %}
+        <a href="/bookings/create/?tutor={{ tutor.id }}" class="btn btn--primary btn--block btn--lg">See courses</a>
+        {% elif not user.is_authenticated %}
+        <a href="/accounts/login/" class="btn btn--primary btn--block btn--lg">Sign in to book</a>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="notice">
+      <strong>How payment works.</strong> You pay the course's monthly rate and
+      nothing more — there is no booking fee. Nothing is owed until the tutor
+      accepts, and you can pay a month at a time.
+    </div>
+  </aside>
+
+</div>
+{% endblock %}

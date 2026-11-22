@@ -1,0 +1,126 @@
+{% extends 'base/luminary_base.html' %}
+{% block nav_admin_chat %}is-active{% endblock %}
+{% block title %}Assistant log | EduAI{% endblock %}
+
+{% block pagehead %}
+<div class="pagehead">
+  <div class="container">
+    <div class="pagehead__title">
+      <h1>Assistant log</h1>
+    </div>
+    <p>What people asked, and what the assistant could not answer. The
+       unanswered list is the useful half — it is the only reliable guide to
+       what the knowledge base is missing.</p>
+  </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="stack">
+
+  <div class="grid grid--stats">
+    <div class="stat">
+      <div class="stat__label">Questions asked</div>
+      <div class="stat__value">{{ total }}</div>
+    </div>
+    <div class="stat stat--green">
+      <div class="stat__label">Answered</div>
+      <div class="stat__value">{{ answered }}</div>
+    </div>
+    <div class="stat stat--amber">
+      <div class="stat__label">Could not answer</div>
+      <div class="stat__value">{{ unanswered_count }}</div>
+    </div>
+    <div class="stat stat--blue">
+      <div class="stat__label">Answer rate</div>
+      <div class="stat__value">{{ rate }}%</div>
+    </div>
+  </div>
+
+  <section class="card">
+    <div class="card__head">
+      <h3>Questions it could not answer</h3>
+      <span class="spacer"></span>
+      <span class="small muted">newest first</span>
+    </div>
+    <div class="card__body">
+      {% if unanswered %}
+      <p class="small muted" style="margin-bottom:14px">
+        Each of these is a candidate for a new entry in
+        <code>chatbot/knowledge.py</code>. Adding one is a data change, not a
+        code change.
+      </p>
+      <div class="tablewrap">
+        <table class="data">
+          <thead>
+            <tr><th>Question</th><th>Closest guess</th>
+                <th class="right">Confidence</th><th>When</th></tr>
+          </thead>
+          <tbody>
+            {% for m in unanswered %}
+            <tr>
+              <td>{{ m.question|truncatechars:90 }}</td>
+              <td class="muted small">{{ m.intent|default:"—" }}</td>
+              <td class="right num">{{ m.confidence|floatformat:2 }}</td>
+              <td class="muted small nowrap">{{ m.asked_at|date:"M j, H:i" }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <p class="muted">Nothing unanswered — either the knowledge base is
+         covering everything, or nobody has asked yet.</p>
+      {% endif %}
+    </div>
+  </section>
+
+  <div class="grid grid--2">
+    <section class="card">
+      <div class="card__head"><h3>Most asked</h3></div>
+      <div class="card__body">
+        {% if popular %}
+        <div class="tablewrap">
+          <table class="data">
+            <thead><tr><th>Topic</th><th class="right">Times</th></tr></thead>
+            <tbody>
+              {% for row in popular %}
+              <tr>
+                <td>{{ row.intent }}</td>
+                <td class="right num">{{ row.times }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <p class="muted">No answered questions yet.</p>
+        {% endif %}
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card__head"><h3>Recent</h3></div>
+      <div class="card__body">
+        {% if recent %}
+        <div class="stack-s">
+          {% for m in recent %}
+          <div style="padding-bottom:8px;border-bottom:1px solid var(--line-2)">
+            <div class="small">{{ m.question|truncatechars:70 }}</div>
+            <div class="xsmall muted">
+              {{ m.user.username|default:"a visitor" }} ·
+              {% if m.answered %}{{ m.intent }}{% else %}<span style="color:var(--amber)">no answer</span>{% endif %} ·
+              {{ m.asked_at|date:"M j, H:i" }}
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <p class="muted">Nothing yet.</p>
+        {% endif %}
+      </div>
+    </section>
+  </div>
+
+</div>
+{% endblock %}

@@ -1,0 +1,65 @@
+{% extends 'base/luminary_base.html' %}
+{% block title %}Reviews | EduAI{% endblock %}
+{% block page_title %}Review Management{% endblock %}
+{% block nav_admin_reviews %}is-active{% endblock %}
+{% block page_subtitle %}
+<p>Every review students have published, newest first.</p>
+{% endblock %}
+
+{% block content %}
+<div class="stack">
+
+  <form method="GET" class="card">
+    <div class="card__body row">
+      <div class="field" style="min-width:180px">
+        <label for="f-rating" class="sr-only">Rating</label>
+        <select name="rating" id="f-rating">
+          <option value="" {% if not rating_filter %}selected{% endif %}>All ratings</option>
+          {% for i in "12345" %}
+          <option value="{{ i }}" {% if rating_filter == i %}selected{% endif %}>{{ i }} star{{ i|pluralize }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <button type="submit" class="btn btn--primary">Filter</button>
+      {% if rating_filter %}<a href="/admin-panel/reviews/" class="btn btn--quiet">Clear</a>{% endif %}
+    </div>
+  </form>
+
+  <section class="card">
+    <div class="card__head">
+      <h3>All reviews</h3><span class="spacer"></span>
+      <span class="small muted">{{ reviews|length }} record{{ reviews|length|pluralize }}</span>
+    </div>
+    <div class="tablewrap">
+      <table class="data">
+        <thead>
+          <tr>
+            <th>Student</th><th>Tutor</th><th class="center">Rating</th>
+            <th>Comment</th><th>Date</th><th class="center">Delete</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in reviews %}
+          <tr>
+            <td><a href="/admin-panel/users/{{ r.booking.student.id }}/" class="strong">{{ r.booking.student.username }}</a></td>
+            <td><a href="/admin-panel/users/{{ r.booking.tutor.id }}/" class="strong">{{ r.booking.tutor.username }}</a></td>
+            <td class="center">
+              <span class="rating__stars">{% for i in "12345" %}{% if forloop.counter <= r.rating %}★{% else %}☆{% endif %}{% endfor %}</span>
+            </td>
+            <td class="small muted" style="max-width:340px">{{ r.comment|truncatechars:90 }}</td>
+            <td class="small muted nowrap">{{ r.created_at|date:"M d, Y" }}</td>
+            <td class="center">
+              <a href="/admin-panel/reviews/{{ r.id }}/delete/" class="iconbtn iconbtn--danger" title="Delete">✕</a>
+            </td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="6">
+            <div class="empty"><h3>No reviews yet</h3><p>Reviews appear once students complete their courses.</p></div>
+          </td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>
+{% endblock %}

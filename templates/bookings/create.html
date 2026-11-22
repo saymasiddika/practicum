@@ -1,0 +1,117 @@
+{% extends 'base/luminary_base.html' %}
+{% block nav_bookings %}is-active{% endblock %}
+{% block title %}Book a course | EduAI{% endblock %}
+
+{% block pagehead %}
+<div class="pagehead">
+  <div class="container">
+    <div class="pagehead__title">
+      <h1>Book a course</h1>
+    </div>
+    <p>Pick the course you want and when you would like to start. The tutor
+       has to accept before anything is owed.</p>
+  </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="stack" style="max-width:680px">
+
+  {% if courses %}
+  <form method="POST" class="card">
+    {% csrf_token %}
+    <div class="card__body stack">
+
+      <div class="field">
+        <label for="course">Course</label>
+        <select id="course" name="course" required>
+          <option value="">Choose a course…</option>
+          {% for course in courses %}
+          <option value="{{ course.id }}"
+                  {% if selected_course_id == course.id|stringformat:"s" %}selected{% endif %}>
+            {{ course.subject }} — {{ course.name }}
+            ({{ course.tutor.get_full_name|default:course.tutor.username }})
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="notice" id="course-summary" hidden>
+        <dl class="kv">
+          <dt>Tutor</dt><dd id="s-tutor"></dd>
+          <dt>Schedule</dt><dd id="s-schedule"></dd>
+          <dt>Length</dt><dd id="s-months"></dd>
+          <dt>Monthly fee</dt><dd id="s-rate"></dd>
+          <dt>Total</dt><dd id="s-total" class="strong"></dd>
+        </dl>
+      </div>
+
+      <div class="field">
+        <label for="date">Start date</label>
+        <input type="date" id="date" name="date" required
+               value="{{ today }}" min="{{ today }}">
+        <p class="xsmall muted">When you would like the first class. The course
+           runs for its full length from this date.</p>
+      </div>
+
+      <input type="hidden" name="months" id="months" value="1">
+
+    </div>
+
+    <div class="card__foot">
+      <button type="submit" class="btn btn--primary">Request this booking</button>
+      <a href="/tutors/" class="btn btn--quiet">Browse tutors</a>
+    </div>
+  </form>
+
+  <p class="small muted">
+    Sending a request costs nothing. Your tutor accepts or declines it, and
+    only then can you pay — in full or a month at a time.
+  </p>
+
+  {% else %}
+  <div class="empty">
+    <h3>Nothing is available to book right now</h3>
+    <p>Every published course currently has a student on it, or no tutor has
+       published one yet.</p>
+    <a href="/tutors/" class="btn btn--primary">Browse tutors</a>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // Show what the chosen course actually commits the student to, before they
+  // commit to it. Every figure comes from the server, never recomputed here.
+  (function () {
+    var data = {{ course_data_json|safe }};
+    var select = document.getElementById('course');
+    var summary = document.getElementById('course-summary');
+    var monthsField = document.getElementById('months');
+    if (!select || !summary) { return; }
+
+    function money(n) { return '৳' + Number(n).toLocaleString(); }
+
+    function show() {
+      var course = data[select.value];
+      if (!course) { summary.hidden = true; return; }
+
+      document.getElementById('s-tutor').textContent = course.tutor;
+      document.getElementById('s-schedule').textContent = course.schedule;
+      document.getElementById('s-months').textContent =
+        course.months + ' month' + (course.months === 1 ? '' : 's');
+      document.getElementById('s-rate').textContent = money(course.rate) + ' per month';
+      document.getElementById('s-total').textContent =
+        money(course.rate * course.months) + ' in total';
+
+      monthsField.value = course.months;
+      summary.hidden = false;
+    }
+
+    select.addEventListener('change', show);
+    show();
+  })();
+</script>
+{% endblock %}

@@ -1,0 +1,69 @@
+{% extends 'base/luminary_base.html' %}
+{% block title %}Payment #{{ payment.id }} | EduAI{% endblock %}
+{% block page_title %}Payment #{{ payment.id }}{% endblock %}
+{% block nav_payments %}is-active{% endblock %}
+{% block breadcrumbs %}
+<nav class="crumbs" aria-label="Breadcrumb">
+  <a href="/">Home</a> <span aria-hidden="true">/</span>
+  <a href="/payments/">Payments</a> <span aria-hidden="true">/</span>
+  <span>Payment #{{ payment.id }}</span>
+</nav>
+{% endblock %}
+{% block page_subtitle %}
+<div class="row" style="margin-top:10px">
+  <span class="pill pill--{{ payment.status }}">{{ payment.get_status_display }}</span>
+  <span class="small muted">Submitted {{ payment.created_at|date:'M d, Y \a\t H:i' }}</span>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="container--mid" style="padding:0">
+<div class="grid grid--2">
+
+  <section class="card">
+    <div class="card__head"><h3>Payment</h3></div>
+    <div class="card__body">
+      <dl class="deflist">
+        <dt>Amount</dt><dd class="money num">৳{{ payment.amount|floatformat:"2g" }}</dd>
+        <dt>Method</dt><dd>{{ payment.get_payment_method_display }}</dd>
+        <dt>Sender number</dt><dd class="num">{{ payment.sender_number|default:"—" }}</dd>
+        <dt>Transaction ID</dt><dd style="word-break:break-all">{{ payment.transaction_id|default:"—" }}</dd>
+        <dt>Commission</dt><dd class="num">৳{{ payment.commission|floatformat:"2g" }} ({{ payment.effective_rate }}%)</dd>
+        <dt>Tutor receives</dt><dd class="num money--in">৳{{ payment.tutor_income|floatformat:"2g" }}</dd>
+        <dt>Type</dt><dd>{% if payment.is_first_payment %}First month{% else %}Instalment{% endif %}</dd>
+      </dl>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card__head"><h3>Booking</h3></div>
+    <div class="card__body stack">
+      <div class="row">
+        {% if user.role == 'student' %}
+        <span class="avatar avatar--lg">{{ payment.booking.tutor.username|upper|first }}</span>
+        <div>
+          <p class="strong">{{ payment.booking.tutor.get_full_name|default:payment.booking.tutor.username }}</p>
+          {% if payment.booking.tutor.tutor_profile %}
+          <p class="xsmall muted">{{ payment.booking.subject }}</p>
+          {% endif %}
+        </div>
+        {% else %}
+        <span class="avatar avatar--lg">{{ payment.booking.student.username|upper|first }}</span>
+        <div>
+          <p class="strong">{{ payment.booking.student.get_full_name|default:payment.booking.student.username }}</p>
+          <p class="xsmall muted">Student</p>
+        </div>
+        {% endif %}
+      </div>
+      <dl class="deflist">
+        <dt>Booking</dt><dd>#{{ payment.booking.id }}</dd>
+        <dt>Start date</dt><dd>{{ payment.booking.date|date:'M d, Y' }}</dd>
+        <dt>Duration</dt><dd>{{ payment.booking.months }} month{{ payment.booking.months|pluralize }}</dd>
+      </dl>
+      <a href="/bookings/{{ payment.booking.id }}/" class="btn btn--secondary btn--block">View booking</a>
+    </div>
+  </section>
+
+</div>
+</div>
+{% endblock %}

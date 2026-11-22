@@ -1,0 +1,55 @@
+{% extends 'base/luminary_base.html' %}
+{% block title %}Apply to become a Teacher | EduAI{% endblock %}
+{% block page_title %}Apply to become a Teacher{% endblock %}
+{% block breadcrumbs %}
+<nav class="crumbs" aria-label="Breadcrumb">
+  <a href="/accounts/profile/">My Profile</a> <span aria-hidden="true">/</span> <span>Apply to become a Teacher</span>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="container--narrow" style="padding:0;max-width:560px">
+<div class="stack">
+
+  {% if not qualifies %}
+  <div class="alert alert--warning">
+    <strong>You are not eligible yet.</strong> Teacher registration requires at
+    least current enrollment in an undergraduate/Bachelor's program —
+    SSC/HSC alone is not enough.
+    {% if educations %}
+      Add an undergraduate (or higher) entry to your education first.
+    {% else %}
+      You have no education on file yet — add one to get started.
+    {% endif %}
+    <a href="/accounts/education/add/">Add education</a>
+  </div>
+  {% else %}
+  <div class="alert alert--info">
+    Your education on file meets the requirement to become a teacher.
+    Provide your NID below to finish applying.
+  </div>
+  {% endif %}
+
+  <form method="POST" enctype="multipart/form-data" class="card">
+    {% csrf_token %}
+    <div class="card__head"><h3>Identity verification</h3></div>
+    <div class="card__body stack">
+      <div class="field">
+        <label for="f-nid-number">NID number</label>
+        <input type="text" name="nid_number" id="f-nid-number" placeholder="1423256795" {% if not qualifies %}disabled{% endif %}>
+      </div>
+      <div class="field">
+        <label for="f-nid-image">NID copy / image</label>
+        <input type="file" name="nid_image" id="f-nid-image" accept="image/png,image/jpeg,image/webp" {% if not qualifies %}disabled{% endif %}>
+        <span class="field__hint">A clear photo or scan of your NID. JPG, PNG or WEBP, up to 5MB.</span>
+      </div>
+    </div>
+    <div class="card__foot row">
+      <button type="submit" class="btn btn--primary" {% if not qualifies %}disabled{% endif %}>Apply to become a teacher</button>
+      <a href="/accounts/profile/" class="btn btn--quiet">Cancel</a>
+    </div>
+  </form>
+
+</div>
+</div>
+{% endblock %}

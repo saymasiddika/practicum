@@ -1,0 +1,212 @@
+{% extends 'base/luminary_base.html' %}
+{% load static %}
+{% block title %}Make a payment | EduAI{% endblock %}
+{% block page_title %}Make a payment{% endblock %}
+{% block nav_payments %}is-active{% endblock %}
+{% block breadcrumbs %}
+<nav class="crumbs" aria-label="Breadcrumb">
+  <a href="/">Home</a> <span aria-hidden="true">/</span>
+  <a href="/bookings/{{ booking.id }}/">Booking #{{ booking.id }}</a> <span aria-hidden="true">/</span>
+  <span>Payment</span>
+</nav>
+{% endblock %}
+{% block page_subtitle %}
+<p>{{ booking.tutor.get_full_name|default:booking.tutor.username }} · {{ booking.months }} month{{ booking.months|pluralize }} at ৳{{ monthly_rate|floatformat:"0g" }} per month</p>
+{% endblock %}
+
+{% block content %}
+<div class="container--mid" style="padding:0">
+<div class="stack">
+
+  <section class="card">
+    <div class="card__body stack-s">
+      <div class="row row--between small">
+        <span><span class="money num">৳{{ total_paid|floatformat:"0g" }}</span> paid</span>
+        <span class="muted num">of ৳{{ total_amount|floatformat:"0g" }}</span>
+      </div>
+      <div class="meter meter--green">
+        {% if total_amount > 0 %}{% widthratio total_paid total_amount 100 as pct %}<i style="width:{{ pct }}%"></i>{% endif %}
+      </div>
+      <p class="small muted">Balance due <span class="money num">৳{{ balance_due|floatformat:"0g" }}</span></p>
+    </div>
+  </section>
+
+  {% if pending_payment %}
+  <section class="card">
+    <div class="empty">
+      <h3>Awaiting Admin Review</h3>
+      <p>
+        Your payment of <strong class="num">৳{{ pending_payment.amount|floatformat:"0g" }}</strong>,
+        submitted {{ pending_payment.created_at|date:"M d, Y" }}, is being checked.
+        Once it's approved you can pay the remaining <strong class="num">৳{{ balance_due|floatformat:"0g" }}</strong>.
+      </p>
+      <a href="/bookings/{{ booking.id }}/" class="btn btn--primary">Back to booking</a>
+    </div>
+  </section>
+
+  {% else %}
+
+  <div class="alert {% if not first_month_covered %}alert--info{% else %}alert--success{% endif %}">
+    <div>
+      <strong>You pay the tutor&rsquo;s monthly rate — nothing on top.</strong>
+      Platform charges come out of that amount, so the total you owe is exactly
+      ৳{{ monthly_rate|floatformat:"0g" }} per month booked.
+    </div>
+  </div>
+
+  {% if gateway_available %}
+  <section class="card">
+    <div class="card__head"><h3>Pay online</h3></div>
+    <div class="card__body stack">
+      <p class="small muted">
+        Pay by card, bKash, Nagad or Rocket through SSLCommerz. Your payment is
+        confirmed automatically &mdash; no transaction ID to type in and no wait
+        for an admin to check it.
+      </p>
+      <form method="POST" action="{% url 'payment-gateway-start' %}" class="stack-s">
+        {% csrf_token %}
+        <input type="hidden" name="booking_id" value="{{ booking.id }}">
+        <div class="field">
+          <label for="gw-amount">Amount to pay now</label>
+          <div class="field__prefix">
+            <span>&#2547;</span>
+            <input type="number" name="amount" id="gw-amount" step="0.01" min="1"
+                   max="{{ balance_due }}" value="{{ balance_due|floatformat:2 }}">
+          </div>
+        </div>
+        <button type="submit" class="btn btn--primary btn--lg">Continue to secure checkout</button>
+      </form>
+    </div>
+  </section>
+
+  <div class="card">
+    <div class="card__head"><h3>Or pay by hand</h3></div>
+    <div class="card__body">
+      <p class="small muted">
+        Send the money yourself and enter the transaction ID below. An admin
+        checks it against the bank record before it counts.
+      </p>
+    </div>
+  </div>
+  {% endif %}
+
+  <form method="POST" action="/payments/create/?booking_id={{ booking.id }}" class="stack">
+    {% csrf_token %}
+
+    <section class="card">
+      <div class="card__head"><h3>Amount</h3></div>
+      <div class="card__body stack">
+        <div class="field">
+          <label for="amount-input">How much are you paying?</label>
+          <div class="field__prefix">
+            <span>৳</span>
+            <input type="number" name="amount" id="amount-input" step="0.01" min="1"
+                   max="{{ balance_due }}" value="{{ balance_due|floatformat:2 }}"
+                   oninput="updatePreview(this.value)">
+          </div>
+        </div>
+
+        <div class="grid grid--stats">
+          <div class="stat stat--blue">
+            <div class="stat__label">You pay now</div>
+            <div class="stat__value" id="prev-paying" style="font-size:1.4rem">৳0</div>
+          </div>
+          <div class="stat">
+            <div class="stat__label">Balance after</div>
+            <div class="stat__value" id="prev-balance" style="font-size:1.4rem">৳0</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card__head"><h3>Payment method</h3></div>
+      <div class="card__body stack">
+        <div class="optiongrid">
+          {% for val, label in payment_methods %}
+          <label class="option">
+            <input type="radio" name="payment_method" value="{{ val }}" {% if forloop.first %}checked{% endif %}>
+            <span class="option__box">
+              {% if val == 'bkash' %}<img src="{% static 'icon/bkash.png' %}" alt="">
+              {% elif val == 'nagad' %}<img src="{% static 'icon/nagad.png' %}" alt="">
+              {% else %}<img src="{% static 'icon/rocket.png' %}" alt="">{% endif %}
+              {{ label }}
+            </span>
+          </label>
+          {% endfor %}
+        </div>
+
+        <div class="notice row row--between">
+          <div>
+            <div class="eyebrow">Send payment to</div>
+            <p class="strong num" style="font-size:1.35rem;letter-spacing:.04em">{{ recipient_display }}</p>
+            <p class="xsmall">Send the exact amount, then enter your transaction ID below.</p>
+          </div>
+          <button type="button" class="btn btn--quiet btn--sm"
+                  onclick="navigator.clipboard.writeText('{{ recipient_number }}').then(()=>{this.textContent='Copied';setTimeout(()=>this.textContent='Copy number',1500)})">
+            Copy number
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card__head"><h3>Transaction details</h3></div>
+      <div class="card__body stack">
+        <div class="field">
+          <label for="f-sender">Your sender number</label>
+          <input type="text" name="sender_number" id="f-sender" placeholder="01XXXXXXXXX">
+        </div>
+        <div class="field">
+          <label for="f-txid">Transaction ID</label>
+          <input type="text" name="transaction_id" id="f-txid" placeholder="From your bKash, Nagad or Rocket app">
+        </div>
+      </div>
+      <div class="card__foot">
+        <button type="submit" class="btn btn--primary btn--block btn--lg">Submit payment</button>
+      </div>
+    </section>
+  </form>
+  {% endif %}
+
+  {% if all_payments %}
+  <section class="card">
+    <div class="card__head"><h3>Payment history</h3></div>
+    <div class="divide">
+      {% for p in all_payments %}
+      <div class="card__body row row--between" style="padding-top:14px;padding-bottom:14px">
+        <div>
+          <p><span class="money num">৳{{ p.amount|floatformat:"0g" }}</span>
+            <span class="pill {% if p.is_first_payment %}pill--info{% else %}pill--confirmed{% endif %}">
+              {% if p.is_first_payment %}First month{% else %}Instalment{% endif %}</span></p>
+          <p class="xsmall muted">
+            {{ p.created_at|date:"M d, Y" }} · {{ p.get_payment_method_display }}
+          </p>
+        </div>
+        <span class="pill pill--{{ p.status }}">{{ p.get_status_display }}</span>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+</div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const balanceDue = {{ balance_due|floatformat:2 }};
+
+function money(n) { return '৳' + Number(n).toLocaleString('en-US', { maximumFractionDigits: 2 }); }
+
+function updatePreview(value) {
+  const amount = parseFloat(value) || 0;
+  document.getElementById('prev-paying').textContent = money(amount);
+  document.getElementById('prev-balance').textContent = money(Math.max(0, balanceDue - amount));
+}
+
+const amountInput = document.getElementById('amount-input');
+if (amountInput) updatePreview(amountInput.value);
+</script>
+{% endblock %}

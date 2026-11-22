@@ -1,0 +1,96 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,500;6..72,700&family=Karla:wght@400;500;700&display=swap">
+  <style>
+    body { margin: 0; font-family: 'Karla', system-ui, sans-serif; background: #1b2420; }
+    a { color: #e8c37a; } a:hover { color: #f4dda8; }
+    * { box-sizing: border-box; }
+    .display { font-family: 'Newsreader', Georgia, serif; }
+  </style>
+</helmet>
+
+<div style="width: 980px; background: #1b2420; color: #eae6dc;">
+
+  <div style="display: flex; align-items: center; gap: 26px; padding: 20px 40px;">
+    <div class="display" style="font-size: 22px; font-weight: 700; letter-spacing: -0.01em; color: #f2eee4;">EduAI</div>
+    <div style="display: flex; gap: 22px; font-size: 14px; color: #9aa89f;">
+      <span>Find tutors</span><span>How it works</span><span>Teach</span>
+    </div>
+    <div style="flex-grow: 1;"></div>
+    <div style="display: flex; gap: 16px; align-items: center; font-size: 14px;">
+      <span style="color: #9aa89f;">Log in</span>
+      <span style="background: #e8c37a; color: #1b2420; padding: 9px 18px; border-radius: 2px; font-weight: 700;">Join free</span>
+    </div>
+  </div>
+
+  <div style="padding: 46px 40px 52px; border-bottom: 1px solid #2e3a35;">
+    <div style="font-size: 12px; letter-spacing: 0.18em; text-transform: uppercase; color: #e8c37a;">Tutoring across Bangladesh</div>
+    <h1 class="display" style="font-size: 58px; line-height: 1.05; font-weight: 700; margin: 18px 0 0; max-width: 17ch; color: #f6f3ea;">
+      The right teacher is worth the month.
+    </h1>
+    <p style="font-size: 17px; line-height: 1.6; color: #a9b5ac; margin: 20px 0 0; max-width: 52ch;">
+      Tutors set one monthly rate and the hours they teach. You book whole months,
+      pay through bKash, Nagad or Rocket, and settle in instalments if you need to.
+    </p>
+
+    <div style="display: flex; gap: 14px; margin-top: 30px; align-items: center;">
+      <div style="display: flex; background: #f6f3ea; border-radius: 2px; overflow: hidden; width: 420px;">
+        <div style="flex-grow: 1; padding: 15px 18px; font-size: 15px; color: #7d8a80;">Chemistry, Class 11…</div>
+      </div>
+      <div style="background: #e8c37a; color: #1b2420; padding: 15px 30px; border-radius: 2px; font-size: 15px; font-weight: 700;">Search</div>
+    </div>
+  </div>
+
+  <div style="padding: 34px 40px 44px;">
+    <div style="display: flex; align-items: baseline; gap: 14px; margin-bottom: 22px;">
+      <div class="display" style="font-size: 24px; font-weight: 700; color: #f2eee4;">Teaching this month</div>
+      <div style="flex-grow: 1;"></div>
+      <div style="font-size: 14px; color: #e8c37a;">See all 34 →</div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px;">
+      <sc-for list="{{tutors}}" as="t" hint-placeholder-count="3">
+        <div style="background: #212c27; border: 1px solid #2e3a35; border-radius: 3px; padding: 22px; display: flex; flex-direction: column; gap: 10px;">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="width: 42px; height: 42px; border-radius: 50%; background: #e8c37a; color: #1b2420; display: grid; place-items: center; font-weight: 700; font-size: 16px;">{{t.initial}}</div>
+            <div>
+              <div style="font-size: 15px; font-weight: 700; color: #f2eee4;">{{t.name}}</div>
+              <div style="font-size: 13px; color: #8d9a91;">{{t.subject}}</div>
+            </div>
+          </div>
+          <p style="font-size: 14px; line-height: 1.5; color: #a9b5ac; margin: 4px 0 0;">{{t.blurb}}</p>
+          <div style="flex-grow: 1;"></div>
+          <div style="display: flex; justify-content: space-between; align-items: baseline; padding-top: 14px; border-top: 1px solid #2e3a35;">
+            <span class="display" style="font-size: 20px; font-weight: 700; color: #f6f3ea;">{{t.rate}}</span>
+            <span style="font-size: 13px; color: #8d9a91;">{{t.days}}</span>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      tutors: [
+        { initial: 'A', name: 'Ayesha Rahman', subject: 'Mathematics', rate: '৳4,500', days: 'Sun · Tue · Thu', blurb: 'HSC calculus and algebra, ten years in the classroom.' },
+        { initial: 'R', name: 'Rakib Hasan', subject: 'Physics', rate: '৳4,000', days: 'Mon · Wed', blurb: 'Builds intuition first, formulas second.' },
+        { initial: 'N', name: 'Nusrat Jahan', subject: 'English', rate: '৳3,500', days: 'Sat · Sun', blurb: 'IELTS and spoken English, beginner to advanced.' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

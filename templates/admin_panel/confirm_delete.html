@@ -1,0 +1,48 @@
+{% extends 'base/luminary_base.html' %}
+{% block title %}Confirm delete | EduAI{% endblock %}
+{% block page_title %}Delete {{ obj_type|lower }}?{% endblock %}
+{% block nav_admin_users %}{% if obj_type == 'User' %}is-active{% endif %}{% endblock %}
+{% block nav_all_bookings %}{% if obj_type == 'Booking' %}is-active{% endif %}{% endblock %}
+{% block nav_admin_tutors %}{% if obj_type == 'Tutor Profile' %}is-active{% endif %}{% endblock %}
+{% block nav_admin_reviews %}{% if obj_type == 'Review' %}is-active{% endif %}{% endblock %}
+
+{% block content %}
+<div class="container--narrow" style="padding:0">
+<div class="stack">
+
+  <div class="alert alert--error">
+    <div>
+      <strong>{{ obj }}</strong> will be permanently deleted. This cannot be undone.
+    </div>
+  </div>
+
+  {% if impact.lines %}
+  <section class="card">
+    <div class="card__head"><h3>This will also delete</h3></div>
+    <div class="card__body">
+      <ul style="margin:0;padding-left:20px">
+        {% for line in impact.lines %}<li>{{ line }}</li>{% endfor %}
+      </ul>
+      {% if impact.approved_total %}
+      <div class="alert alert--warning" style="margin-top:16px">
+        <span>
+          Includes <strong class="num">৳{{ impact.approved_total|floatformat:"0g" }}</strong> of approved payments.
+          Deleting removes them from revenue and commission reporting.
+        </span>
+      </div>
+      {% endif %}
+    </div>
+  </section>
+  {% endif %}
+
+  <div class="row">
+    <form method="POST" class="inline-form">
+      {% csrf_token %}
+      <button type="submit" class="btn btn--danger">Yes, delete permanently</button>
+    </form>
+    <a href="{{ cancel_url }}" class="btn btn--quiet">Cancel</a>
+  </div>
+
+</div>
+</div>
+{% endblock %}

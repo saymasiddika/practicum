@@ -1,0 +1,80 @@
+{% extends 'base/luminary_base.html' %}
+{% block nav_reviews %}is-active{% endblock %}
+{% block title %}Review #{{ review.id }} | EduAI{% endblock %}
+{% block page_title %}Review #{{ review.id }}{% endblock %}
+{% block breadcrumbs %}
+<nav class="crumbs" aria-label="Breadcrumb">
+  <a href="/">Home</a> <span aria-hidden="true">/</span>
+  <a href="/reviews/">Student reviews</a> <span aria-hidden="true">/</span>
+  <span>Review #{{ review.id }}</span>
+</nav>
+{% endblock %}
+{% block page_subtitle %}
+<div class="row" style="margin-top:10px">
+  <span class="rating__stars" style="font-size:1.15rem">{% for i in "12345" %}{% if forloop.counter <= review.rating %}★{% else %}☆{% endif %}{% endfor %}</span>
+  <span class="rating__value num">{{ review.rating }} out of 5</span>
+  <span class="small muted">· {{ review.created_at|date:'M d, Y' }}</span>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="grid grid--detail">
+
+  <div class="stack">
+    <section class="card">
+      <div class="card__body">
+        <p style="font-size:1.1rem;line-height:1.6">{{ review.comment }}</p>
+      </div>
+    </section>
+
+    <div class="grid grid--2">
+      <section class="card">
+        <div class="card__head"><h3>Student</h3></div>
+        <div class="card__body row">
+          <span class="avatar avatar--lg">{{ review.booking.student.username|upper|first }}</span>
+          <div>
+            <p class="strong">{{ review.booking.student.get_full_name|default:review.booking.student.username }}</p>
+            <p class="xsmall muted">@{{ review.booking.student.username }}</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card__head"><h3>Tutor</h3></div>
+        <div class="card__body row">
+          <span class="avatar avatar--lg">{{ review.booking.tutor.username|upper|first }}</span>
+          <div>
+            <p class="strong">{{ review.booking.tutor.get_full_name|default:review.booking.tutor.username }}</p>
+            {% if review.booking.tutor.tutor_profile %}
+            <p class="xsmall muted">{{ review.booking.subject }}</p>
+            {% endif %}
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <aside class="stack">
+    <div class="card">
+      <div class="card__head"><h3>Course</h3></div>
+      <div class="card__body stack">
+        <dl class="deflist">
+          <dt>Start date</dt><dd>{{ review.booking.date|date:'M d, Y' }}</dd>
+          <dt>Duration</dt><dd>{{ review.booking.months }} month{{ review.booking.months|pluralize }}</dd>
+          {% if review.booking.course %}
+          <dt>Schedule</dt><dd>{{ review.booking.course.schedule_display }}</dd>
+          {% endif %}
+          <dt>Booking</dt><dd>#{{ review.booking.id }}</dd>
+        </dl>
+        <a href="/bookings/{{ review.booking.id }}/" class="btn btn--secondary btn--block">View booking</a>
+        <a href="/reviews/" class="btn btn--quiet btn--block">All reviews</a>
+      </div>
+    </div>
+
+    <div class="notice">
+      <strong>Verified review.</strong> Only a student who completed this course can write it.
+    </div>
+  </aside>
+
+</div>
+{% endblock %}

@@ -1,0 +1,171 @@
+{% extends 'base/luminary_base.html' %}
+{% block title %}{{ target_user.username }} | EduAI{% endblock %}
+{% block page_title %}{{ target_user.get_full_name|default:target_user.username }}{% endblock %}
+{% block nav_admin_users %}is-active{% endblock %}
+{% block breadcrumbs %}
+<nav class="crumbs" aria-label="Breadcrumb">
+  <a href="/dashboard/">Admin</a> <span aria-hidden="true">/</span>
+  <a href="/admin-panel/users/">User Management</a> <span aria-hidden="true">/</span>
+  <span>{{ target_user.username }}</span>
+</nav>
+{% endblock %}
+{% block page_subtitle %}
+<div class="row" style="margin-top:10px">
+  <span class="pill {% if target_user.role == 'tutor' %}pill--confirmed{% else %}pill--approved{% endif %}">{{ target_user.role|capfirst|default:"Staff" }}</span>
+  {% if target_user.is_superuser %}<span class="pill pill--rejected">Superuser</span>{% elif target_user.is_staff %}<span class="pill pill--pending">Staff</span>{% endif %}
+  <span class="pill {% if target_user.is_active %}pill--approved{% else %}pill--rejected{% endif %}">{% if target_user.is_active %}Active{% else %}Inactive{% endif %}</span>
+  <span class="small muted">@{{ target_user.username }} · {{ target_user.email|default:"no email" }}</span>
+</div>
+{% endblock %}
+{% block topbar_action %}
+{% if user.is_superuser %}
+<a href="/admin-panel/users/{{ target_user.id }}/edit/" class="btn btn--secondary btn--sm">Edit user</a>
+{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="grid grid--detail">
+
+  <div class="stack">
+    <section class="card">
+      <div class="card__head"><h3>Account</h3></div>
+      <div class="card__body">
+        <dl class="deflist">
+          <dt>Username</dt><dd>{{ target_user.username }}</dd>
+          <dt>Full name</dt><dd>{{ target_user.get_full_name|default:"—" }}</dd>
+          <dt>Email</dt><dd>{{ target_user.email|default:"—" }}</dd>
+          <dt>Phone</dt><dd>{{ target_user.phone|default:"—" }}</dd>
+          <dt>Joined</dt><dd>{{ target_user.date_joined|date:"M d, Y" }}</dd>
+          <dt>Last login</dt><dd>{{ target_user.last_login|date:"M d, Y"|default:"Never" }}</dd>
+        </dl>
+        {% if target_user.bio %}<p class="small muted" style="margin-top:16px">{{ target_user.bio }}</p>{% endif %}
+      </div>
+    </section>
+
+    {% if target_user.role == 'tutor' %}
+    <section class="card">
+      <div class="card__head"><h3>Verification</h3></div>
+      <div class="card__body stack-s">
+        <dl class="deflist">
+          <dt>NID number</dt><dd>{{ target_user.nid_number|default:"—" }}</dd>
+          <dt>NID status</dt>
+          <dd>
+            <span class="pill pill--{% if target_user.nid_verification_status == 'verified' %}approved{% elif target_user.nid_verification_status == 'pending' %}pending{% elif target_user.nid_verification_status == 'rejected' %}rejected{% else %}cancelled{% endif %}">
+              {{ target_user.get_nid_verification_status_display }}
+            </span>
+          </dd>
+        </dl>
+        {% if target_user.nid_image %}
+        <div class="row" style="gap:8px;flex-wrap:wrap">
+          <a href="/accounts/nid-image/{{ target_user.id }}/" target="_blank" rel="noopener" class="btn btn--secondary btn--sm">View NID image</a>
+          {% if user.is_superuser or user.is_staff %}
+          <form method="POST" action="/admin-panel/users/{{ target_user.id }}/verify-nid/verify/" class="inline-form">
+            {% csrf_token %}<button type="submit" class="btn btn--quiet btn--sm">Mark verified</button>
+          </form>
+          <form method="POST" action="/admin-panel/users/{{ target_user.id }}/verify-nid/reject/" class="inline-form">
+            {% csrf_token %}<button type="submit" class="btn btn--quiet btn--sm">Reject</button>
+          </form>
+          {% endif %}
+        </div>
+        {% else %}
+        <p class="xsmall muted">No NID image on file.</p>
+        {% endif %}
+
+        {% with educations=target_user.educations.all %}
+        {% if educations %}
+        <div class="stack-s" style="margin-top:8px">
+          <p class="small strong">Education</p>
+          {% for entry in educations %}
+          <div class="row row--between" style="flex-wrap:wrap;gap:6px">
+            <span class="small">
+              {{ entry.display_title }} &mdash; {{ entry.institution }}
+              <span class="pill pill--{% if entry.verification_status == 'verified' %}approved{% elif entry.verification_status == 'pending' %}pending{% elif entry.verification_status == 'rejected' %}rejected{% else %}cancelled{% endif %}">
+                {{ entry.get_verification_status_display }}
+              </span>
+            </span>
+            {% if entry.document %}
+            <div class="row" style="gap:8px">
+              <a href="/accounts/education/{{ entry.id }}/document/" target="_blank" rel="noopener" class="btn btn--quiet btn--sm">View document</a>
+              <form method="POST" action="/admin-panel/educations/{{ entry.id }}/verify/verify/" class="inline-form">
+                {% csrf_token %}<button type="submit" class="btn btn--quiet btn--sm">Verify</button>
+              </form>
+              <form method="POST" action="/admin-panel/educations/{{ entry.id }}/verify/reject/" class="inline-form">
+                {% csrf_token %}<button type="submit" class="btn btn--quiet btn--sm">Reject</button>
+              </form>
+            </div>
+            {% else %}
+            <span class="xsmall muted">No document</span>
+            {% endif %}
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+        {% endwith %}
+      </div>
+    </section>
+    {% endif %}
+
+    {% if target_user.role == 'tutor' and target_user.tutor_profile %}
+    <section class="card">
+      <div class="card__head"><h3>Tutor listing</h3></div>
+      <div class="card__body">
+        <dl class="deflist">
+          <dt>Teaches</dt>
+          <dd>{% for s in target_user.tutor_profile.subjects %}{% if not forloop.first %}, {% endif %}{{ s }}{% empty %}—{% endfor %}</dd>
+          <dt>Courses</dt><dd class="num">{{ target_user.courses.count }}</dd>
+          <dt>Rating</dt><dd class="num">{{ target_user.tutor_profile.rating }} / 5</dd>
+        </dl>
+      </div>
+    </section>
+    {% endif %}
+
+    {% if bookings %}
+    <section class="card">
+      <div class="card__head"><h3>Booking history</h3></div>
+      <div class="tablewrap">
+        <table class="data">
+          <thead><tr><th>#</th><th>{% if target_user.role == 'student' %}Tutor{% else %}Student{% endif %}</th>
+            <th class="center">Months</th><th>Date</th><th class="center">Status</th></tr></thead>
+          <tbody>
+            {% for b in bookings %}
+            <tr>
+              <td class="muted num">#{{ b.id }}</td>
+              <td class="strong">{% if target_user.role == 'student' %}{{ b.tutor.username }}{% else %}{{ b.student.username }}{% endif %}</td>
+              <td class="center num">{{ b.months }}</td>
+              <td class="small muted nowrap">{{ b.date|date:"M d, Y" }}</td>
+              <td class="center"><span class="pill pill--{{ b.status }}">{{ b.get_status_display }}</span></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+    {% endif %}
+  </div>
+
+  <aside class="stack">
+    <div class="grid grid--stats" style="grid-template-columns:1fr">
+      <div class="stat stat--blue"><div class="stat__label">Bookings</div><div class="stat__value">{{ bookings|length }}</div></div>
+      <div class="stat stat--green"><div class="stat__label">Payments</div><div class="stat__value">{{ payments|length }}</div></div>
+    </div>
+
+    {% if user.is_superuser %}
+    <div class="card">
+      <div class="card__head"><h3>Administration</h3></div>
+      <div class="card__body stack-s">
+        <a href="/admin-panel/users/{{ target_user.id }}/edit/" class="btn btn--quiet btn--block">Edit details</a>
+        <form method="POST" action="/admin-panel/users/{{ target_user.id }}/toggle/">
+          {% csrf_token %}
+          <button type="submit" class="btn btn--quiet btn--block">
+            {% if target_user.is_active %}Deactivate account{% else %}Activate account{% endif %}
+          </button>
+        </form>
+        <a href="/admin-panel/users/{{ target_user.id }}/delete/" class="btn btn--danger btn--block">Delete user</a>
+        <p class="xsmall muted">Deleting removes their bookings and every payment record attached to them.</p>
+      </div>
+    </div>
+    {% endif %}
+  </aside>
+
+</div>
+{% endblock %}

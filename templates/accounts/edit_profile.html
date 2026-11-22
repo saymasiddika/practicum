@@ -1,0 +1,90 @@
+{% extends 'base/luminary_base.html' %}
+{% block title %}Edit profile | EduAI{% endblock %}
+{% block page_title %}Edit profile{% endblock %}
+{% block nav_profile %}is-active{% endblock %}
+{% block breadcrumbs %}
+<nav class="crumbs" aria-label="Breadcrumb">
+  <a href="/accounts/profile/">My Profile</a> <span aria-hidden="true">/</span> <span>Edit</span>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="container--narrow" style="padding:0">
+<form method="POST" action="/accounts/edit-profile/" enctype="multipart/form-data" class="stack">
+  {% csrf_token %}
+
+  <section class="card">
+    <div class="card__head"><h3>Profile picture</h3></div>
+    <div class="card__body">
+      <div class="row" style="gap:20px">
+        {% if user.avatar %}
+          <img id="avatar-preview" src="{{ user.avatar.url }}" alt="" class="avatar avatar--lg">
+        {% else %}
+          <span id="avatar-placeholder" class="avatar avatar--lg">{{ user.username|upper|first }}</span>
+          <img id="avatar-preview" src="" alt="" class="avatar avatar--lg" hidden>
+        {% endif %}
+        <div class="stack-s">
+          <label for="avatar-input" class="btn btn--secondary btn--sm" style="cursor:pointer">Choose an image</label>
+          <input type="file" id="avatar-input" name="avatar" accept="image/png,image/jpeg,image/webp"
+                 class="sr-only" onchange="previewAvatar(this)">
+          <span class="field__hint">JPG, PNG or WEBP, up to 5MB.</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card__head"><h3>Basic information</h3></div>
+    <div class="card__body stack">
+      <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(min(100%,200px),1fr));gap:16px">
+        <div class="field">
+          <label for="f-first">First name</label>
+          <input type="text" name="first_name" id="f-first" value="{{ user.first_name }}">
+        </div>
+        <div class="field">
+          <label for="f-last">Last name</label>
+          <input type="text" name="last_name" id="f-last" value="{{ user.last_name }}">
+        </div>
+      </div>
+      <div class="field">
+        <label for="f-email">Email address</label>
+        <input type="email" name="email" id="f-email" value="{{ user.email }}" placeholder="you@example.com">
+      </div>
+      <div class="field">
+        <label for="f-phone">Phone number</label>
+        <input type="text" name="phone" id="f-phone" value="{{ user.phone|default:'' }}" placeholder="01XXXXXXXXX">
+      </div>
+      <div class="field">
+        <label for="f-bio">About you</label>
+        <textarea name="bio" id="f-bio" rows="4" placeholder="A short introduction.">{{ user.bio|default:'' }}</textarea>
+      </div>
+      <div class="notice">
+        Your username <strong>@{{ user.username }}</strong> and role
+        <strong>{{ user.role|capfirst }}</strong> can't be changed.
+      </div>
+    </div>
+    <div class="card__foot row">
+      <button type="submit" class="btn btn--primary">Save changes</button>
+      <a href="/accounts/profile/" class="btn btn--quiet">Cancel</a>
+    </div>
+  </section>
+</form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function previewAvatar(input) {
+  if (!input.files || !input.files[0]) return;
+  var reader = new FileReader();
+  reader.onload = function (e) {
+    var preview = document.getElementById('avatar-preview');
+    var placeholder = document.getElementById('avatar-placeholder');
+    preview.src = e.target.result;
+    preview.hidden = false;
+    if (placeholder) placeholder.hidden = true;
+  };
+  reader.readAsDataURL(input.files[0]);
+}
+</script>
+{% endblock %}

@@ -1,0 +1,157 @@
+{% comment %}The floating assistant, included on every page by the base template.
+
+   It degrades honestly: with JavaScript off, the launcher is a plain link to
+   the full page at /chat/ rather than a button that does nothing.{% endcomment %}
+
+<div class="chatwidget" id="chatwidget" hidden>
+  <div class="chatwidget__panel" id="chatpanel" hidden role="dialog"
+       aria-label="EduAI assistant">
+    <div class="chatwidget__head">
+      <strong>Assistant</strong>
+      <span class="spacer"></span>
+      <a href="/chat/" class="xsmall" title="Open the full page">Full page</a>
+      <button type="button" class="chatwidget__close" id="chatclose"
+              aria-label="Close the assistant">&times;</button>
+    </div>
+
+    <div class="chatwidget__log" id="chatwidgetlog">
+      <div class="chatmsg chatmsg--bot">
+        <p>Hello. Ask me about tutors, payments or refunds.</p>
+      </div>
+    </div>
+
+    <div class="chatwidget__chips" id="chatwidgetchips"></div>
+
+    <form class="chatwidget__form" id="chatform">
+      <label class="sr-only" for="chatinput">Your question</label>
+      <input type="text" id="chatinput" autocomplete="off" maxlength="400"
+             placeholder="Ask a question…">
+      <button type="submit" class="btn btn--primary btn--sm">Ask</button>
+    </form>
+  </div>
+
+  <button type="button" class="chatwidget__launch" id="chatlaunch"
+          aria-label="Open the assistant">
+    <span aria-hidden="true">Ask</span>
+  </button>
+</div>
+
+<noscript>
+  <a href="/chat/" class="chatwidget__launch chatwidget__launch--static">Ask</a>
+</noscript>
+
+<script>
+(function () {
+  var widget = document.getElementById('chatwidget');
+  var panel  = document.getElementById('chatpanel');
+  var log    = document.getElementById('chatwidgetlog');
+  var chips  = document.getElementById('chatwidgetchips');
+  var form   = document.getElementById('chatform');
+  var input  = document.getElementById('chatinput');
+  if (!widget || !form) { return; }
+
+  // Only reveal the launcher once we know scripting works — otherwise the
+  // noscript link is the one that shows.
+  widget.hidden = false;
+
+  var STARTERS = {{ chat_starters|safe }};
+
+  function csrf() {
+    var m = document.cookie.match(/csrftoken=([^;]+)/);
+    return m ? m[1] : '';
+  }
+
+  function el(tag, cls, text) {
+    var node = document.createElement(tag);
+    if (cls) { node.className = cls; }
+    if (text) { node.textContent = text; }
+    return node;
+  }
+
+  function bubble(who, text) {
+    var wrap = el('div', 'chatmsg chatmsg--' + who);
+    // textContent, never innerHTML — answers can contain a person's own data
+    // and must never be parsed as markup.
+    text.split('\n').forEach(function (line) {
+      wrap.appendChild(el('p', null, line));
+    });
+    log.appendChild(wrap);
+    log.scrollTop = log.scrollHeight;
+    return wrap;
+  }
+
+  function renderChips(items) {
+    chips.textContent = '';
+    (items || []).slice(0, 3).forEach(function (text) {
+      var b = el('button', 'chip', text);
+      b.type = 'button';
+      b.addEventListener('click', function () { send(text); });
+      chips.appendChild(b);
+    });
+  }
+
+  function renderActions(wrap, actions) {
+    if (!actions || !actions.length) { return; }
+    var row = el('div', 'chatactions');
+    actions.forEach(function (a) {
+      var link = el('a', 'btn btn--secondary btn--sm', a.label);
+      link.href = a.url;
+      row.appendChild(link);
+    });
+    wrap.appendChild(row);
+  }
+
+  var busy = false;
+
+  function send(text) {
+    if (busy || !text.trim()) { return; }
+    busy = true;
+    bubble('you', text);
+    input.value = '';
+    chips.textContent = '';
+
+    var thinking = bubble('bot', '…');
+
+    fetch('/chat/ask/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrf() },
+      body: JSON.stringify({ question: text })
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        thinking.remove();
+        var wrap = bubble('bot', data.answer || 'Something went wrong.');
+        renderActions(wrap, data.actions);
+        renderChips(data.follow_ups);
+      })
+      .catch(function () {
+        thinking.remove();
+        bubble('bot', 'I could not reach the server. Please try again.');
+      })
+      .finally(function () { busy = false; input.focus(); });
+  }
+
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    send(input.value);
+  });
+
+  document.getElementById('chatlaunch').addEventListener('click', function () {
+    panel.hidden = !panel.hidden;
+    if (!panel.hidden) {
+      if (!chips.children.length && !log.querySelector('.chatmsg--you')) {
+        renderChips(STARTERS);
+      }
+      input.focus();
+    }
+  });
+
+  document.getElementById('chatclose').addEventListener('click', function () {
+    panel.hidden = true;
+  });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && !panel.hidden) { panel.hidden = true; }
+  });
+})();
+</script>

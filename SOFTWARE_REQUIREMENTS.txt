@@ -1,0 +1,200 @@
+===============================================================================
+ EduAI - Quick Tutor Finding System
+ Software required to run this project
+===============================================================================
+
+Everything below was verified on the machine this project was developed on:
+Windows 11 Pro (10.0.26200), Python 3.13.14.
+
+
+-------------------------------------------------------------------------------
+ 1. REQUIRED - the project will not run without these
+-------------------------------------------------------------------------------
+
+  Python 3.13 or newer
+      Download: https://www.python.org/downloads/
+      Tested on 3.13.14.
+      IMPORTANT (Windows): tick "Add python.exe to PATH" in the installer.
+      Check it worked:   python --version
+
+  pip
+      Comes bundled with Python. No separate install.
+      Check:   python -m pip --version
+
+  No database server is needed.
+      This project uses SQLite, which is built into Python. There is nothing
+      to install, no service to start, and no username or password to set up.
+      The whole database is the single file db.sqlite3 in the project folder.
+
+
+-------------------------------------------------------------------------------
+ 2. PYTHON PACKAGES - installed automatically, do not install by hand
+-------------------------------------------------------------------------------
+
+  These are listed in requirements.txt and installed by the one command in
+  section 4. Shown here only so you know what is being pulled in.
+
+      Django                  6.0.4        the web framework
+      djangorestframework     3.17.1       REST scaffolding (installed, not routed)
+      pillow                  12.2.0       image handling for profile pictures
+      python-dateutil         2.9.0.post0  month arithmetic for course durations
+      asgiref                 3.11.1       Django dependency
+      sqlparse                0.5.5        Django dependency
+      six                     1.17.0       dateutil dependency
+      tzdata                  2026.1       timezone data (Asia/Dhaka)
+
+  Note: neither the SSLCommerz payment integration nor the AI assistant adds
+  a package to this list. Both use only Python's standard library — the
+  assistant's TF-IDF retrieval is implemented directly rather than pulled in
+  from scikit-learn, so there is no machine-learning stack to install and
+  nothing to download.
+
+
+-------------------------------------------------------------------------------
+ 3. OPTIONAL - useful, but the project runs fine without them
+-------------------------------------------------------------------------------
+
+  Git
+      Only needed to clone the repository or view its history.
+      Download: https://git-scm.com/downloads
+
+  A web browser
+      Any modern browser. Chrome, Edge and Firefox were all used in testing.
+
+  Java + PlantUML
+      Only to render the ER diagram (diagrams/online_tutor_management_erd.puml)
+      into an image. Not needed to run the application.
+      Alternative with no install: paste the .puml file contents into
+      https://www.plantuml.com/plantuml
+
+  A code editor
+      VS Code, PyCharm, or anything else. Only needed to read or edit the code.
+
+
+-------------------------------------------------------------------------------
+ 4. SETUP - first time only
+-------------------------------------------------------------------------------
+
+  Open a terminal in the project folder, then run these in order.
+
+  Windows (PowerShell or Command Prompt):
+
+      python -m venv .venv
+      .venv\Scripts\activate
+      pip install -r requirements.txt
+      python manage.py migrate
+
+  macOS / Linux:
+
+      python3 -m venv .venv
+      source .venv/bin/activate
+      pip install -r requirements.txt
+      python manage.py migrate
+
+  What each line does:
+      1. creates an isolated Python environment inside the project folder
+      2. switches your terminal to use it
+      3. installs the packages from section 2
+      4. builds the database tables
+
+  If the project already has a .venv folder, skip step 1.
+
+
+-------------------------------------------------------------------------------
+ 5. RUNNING IT
+-------------------------------------------------------------------------------
+
+      python manage.py runserver
+
+  Then open:   http://127.0.0.1:8000/
+
+  Stop the server with Ctrl+C.
+
+  Login details are in CREDENTIALS.txt.
+
+  No configuration is required to run locally. The project falls back to safe
+  development defaults when no environment variables are set.
+
+
+-------------------------------------------------------------------------------
+ 6. RUNNING THE TESTS
+-------------------------------------------------------------------------------
+
+      python manage.py test
+
+  Expected result: 283 tests, all passing. It takes roughly five minutes.
+
+  To run one app's tests only:
+
+      python manage.py test payments
+
+
+-------------------------------------------------------------------------------
+ 7. ONLINE PAYMENTS (OPTIONAL)
+-------------------------------------------------------------------------------
+
+  The site works fully without this. Only the SSLCommerz "pay online" button
+  needs it; the manual bKash / Nagad / Rocket flow does not.
+
+  To enable it, copy .env.example to .env and fill in the two SSLCommerz
+  values from your merchant panel:
+
+      SSLCOMMERZ_STORE_ID=...
+      SSLCOMMERZ_STORE_PASSWORD=...
+      SSLCOMMERZ_SANDBOX=1
+
+  .env is deliberately excluded from version control. Never commit it, and
+  never put these values in the README or in any file that gets shared.
+
+  If these are left blank, the online payment option simply does not appear.
+
+
+-------------------------------------------------------------------------------
+ 8. DEPLOYING TO A REAL SERVER
+-------------------------------------------------------------------------------
+
+  Local development needs no configuration. A real deployment needs three
+  environment variables, and the project will refuse to start without them:
+
+      DJANGO_DEBUG=0
+      DJANGO_SECRET_KEY=<generate a new one, see below>
+      DJANGO_ALLOWED_HOSTS=yourdomain.com
+
+  Generate a secret key with:
+
+      python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"
+
+  Setting DJANGO_DEBUG=0 also switches on HTTPS-only cookies, SSL redirect and
+  HSTS, so the site must be served over HTTPS once you do.
+
+  Verify the configuration with:
+
+      python manage.py check --deploy
+
+  It should report no issues.
+
+
+-------------------------------------------------------------------------------
+ 9. TROUBLESHOOTING
+-------------------------------------------------------------------------------
+
+  "python is not recognised"
+      Python is not on your PATH. Reinstall it and tick
+      "Add python.exe to PATH", or use the full path to python.exe.
+
+  "No module named django"
+      The virtual environment is not active. Run .venv\Scripts\activate
+      (Windows) or source .venv/bin/activate (macOS/Linux) first.
+
+  "That port is already in use"
+      Another copy of the server is still running. Either stop it, or use a
+      different port:   python manage.py runserver 8001
+
+  "no such table: ..."
+      The database has not been built yet. Run:   python manage.py migrate
+
+  Cannot log in
+      See CREDENTIALS.txt. If a password no longer works, reset it with:
+          python manage.py changepassword <username>
+
+===============================================================================

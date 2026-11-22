@@ -1,0 +1,191 @@
+{% extends 'base/luminary_base.html' %}
+{% block nav_bookings %}is-active{% endblock %}
+{% block nav_students %}is-active{% endblock %}
+{% block title %}{% if kind == 'complete' %}Finish early{% else %}End this booking{% endif %} | EduAI{% endblock %}
+
+{% block pagehead %}
+<div class="pagehead">
+  <div class="container">
+    <div class="pagehead__title">
+      <h1>{% if kind == 'complete' %}Finish the course early{% else %}End this booking{% endif %}</h1>
+    </div>
+    <p>
+      {% if kind == 'complete' %}
+        Tell us why the course is finished ahead of schedule. An admin will read
+        your reason before the booking is marked complete.
+      {% else %}
+        Tell us why you are pulling out. An admin will read your reason, and the
+        refund below is set by how far into the course you are.
+      {% endif %}
+    </p>
+  </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="stack" style="max-width:740px">
+
+    <section class="card">
+      <div class="card__head"><h3>The booking</h3></div>
+      <div class="card__body">
+        <dl class="kv">
+          <dt>Tutor</dt>
+          <dd>{{ booking.tutor.get_full_name|default:booking.tutor.username }}
+              &middot; {{ booking.course.name|default:booking.subject }}</dd>
+          <dt>Course</dt>
+          <dd>{{ booking.months }} month{{ booking.months|pluralize }},
+              starting {{ booking.date|date:"F j, Y" }}</dd>
+          <dt>Runs until</dt>
+          <dd>{{ booking.natural_end_date|date:"F j, Y" }}</dd>
+          <dt>Paid so far</dt>
+          <dd>৳{{ booking.total_paid|floatformat:"0g" }} of ৳{{ booking.total_amount|floatformat:"0g" }}</dd>
+        </dl>
+      </div>
+    </section>
+
+    {% if kind == 'terminate' %}
+    <section class="card">
+      <div class="card__head"><h3>What you would get back</h3></div>
+      <div class="card__body stack">
+
+        {% if quote.is_refundable %}
+        <div class="alert alert--info">
+          <strong>৳{{ quote.amount|floatformat:"0g" }} refundable</strong> &mdash;
+          {{ quote.percent }}% of what you have paid, because you are ending
+          {{ quote.tier }}.
+        </div>
+        {% else %}
+        <div class="alert alert--warning">
+          <strong>No refund is due.</strong>
+          {% if booking.total_paid %}
+            You are ending {{ quote.tier }}, and the policy refunds nothing past
+            that point.
+          {% else %}
+            You have not paid anything on this booking yet, so there is nothing
+            to refund.
+          {% endif %}
+          You can still end the booking.
+        </div>
+        {% endif %}
+
+        <details>
+          <summary class="small">How the refund is worked out</summary>
+          <div class="small muted" style="margin-top:10px">
+            <p>The percentage is counted from the day the course started, and
+               applies to what you have actually paid.</p>
+            <table class="data" style="margin-top:8px">
+              <tbody>
+                <tr><td>Before the course starts</td><td class="right">100%</td></tr>
+                <tr><td>Within the first week</td><td class="right">75%</td></tr>
+                <tr><td>Within the second week</td><td class="right">50%</td></tr>
+                <tr><td>Weeks three and four</td><td class="right">25%</td></tr>
+                <tr><td>After four weeks</td><td class="right">Nothing</td></tr>
+              </tbody>
+            </table>
+            <p style="margin-top:10px">If your <em>tutor</em> ends the booking
+               instead, this ladder does not apply to you &mdash; you get back
+               everything that was not taught.</p>
+          </div>
+        </details>
+      </div>
+    </section>
+    {% endif %}
+
+    <form method="POST" class="card">
+      {% csrf_token %}
+      <input type="hidden" name="kind" value="{{ kind }}">
+
+      <div class="card__head"><h3>Your reason</h3></div>
+      <div class="card__body stack">
+        <div class="field">
+          <label for="reason">
+            {% if kind == 'complete' %}
+              Why is the course finished early?
+            {% else %}
+              Why are you ending this booking?
+            {% endif %}
+          </label>
+          <textarea id="reason" name="reason" rows="4" required minlength="10"
+                    placeholder="An admin reads this, so a sentence or two of real detail helps.">{{ form.reason }}</textarea>
+          <p class="xsmall muted">At least a sentence. Vague reasons get declined.</p>
+        </div>
+
+        {% if kind == 'terminate' and quote.is_refundable and initiated_by == 'student' %}
+        <fieldset class="field">
+          <legend>Where should the refund go?</legend>
+
+          {% for value, label in payout_choices %}
+          <label class="choice">
+            <input type="radio" name="payout_method" value="{{ value }}"
+                   {% if form.payout_method %}{% if form.payout_method == value %}checked{% endif %}{% elif forloop.first %}checked{% endif %}
+                   data-needs-account="{% if value != 'office' %}1{% else %}0{% endif %}"
+                   data-needs-bank="{% if value == 'bank' %}1{% else %}0{% endif %}">
+            <span>{{ label }}</span>
+          </label>
+          {% endfor %}
+
+          <div class="field" id="account-field" style="margin-top:14px">
+            <label for="payout_account">Account number</label>
+            <input type="text" id="payout_account" name="payout_account"
+                   placeholder="01XXXXXXXXX" autocomplete="off" value="{{ form.payout_account }}">
+          </div>
+
+          <div class="field" id="bank-field" hidden>
+            <label for="payout_bank_name">Bank and branch</label>
+            <input type="text" id="payout_bank_name" name="payout_bank_name"
+                   placeholder="Example Bank, Dhanmondi branch" autocomplete="off" value="{{ form.payout_bank_name }}">
+          </div>
+
+          <p class="xsmall muted">
+            Choosing &ldquo;collect from the office&rdquo; means no account details
+            are stored &mdash; bring your student ID and we will hand it over in person.
+          </p>
+        </fieldset>
+        {% elif kind == 'terminate' and initiated_by == 'tutor' and quote.is_refundable %}
+        <div class="alert alert--info">
+          <strong>৳{{ quote.amount|floatformat:"0g" }} goes back to
+          {{ booking.student.get_full_name|default:booking.student.username }}</strong>
+          &mdash; everything you have not taught. They will be asked where to
+          send it; you do not need to arrange anything.
+        </div>
+        {% endif %}
+      </div>
+
+      <div class="card__foot">
+        <button type="submit" class="btn btn--primary">
+          {% if kind == 'complete' %}Request early completion{% else %}Request to end{% endif %}
+        </button>
+        <a href="/bookings/{{ booking.id }}/" class="btn btn--quiet">Go back</a>
+      </div>
+    </form>
+
+    <p class="small muted">
+      Nothing changes until an admin has reviewed this. You will see the outcome,
+      and any note they leave, on the booking itself.
+    </p>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // Show the account and bank fields only when the chosen payout needs them.
+  (function () {
+    var accountField = document.getElementById('account-field');
+    var bankField = document.getElementById('bank-field');
+    if (!accountField) { return; }
+
+    function sync() {
+      var chosen = document.querySelector('input[name="payout_method"]:checked');
+      if (!chosen) { return; }
+      accountField.hidden = chosen.dataset.needsAccount !== '1';
+      bankField.hidden = chosen.dataset.needsBank !== '1';
+    }
+
+    document.querySelectorAll('input[name="payout_method"]').forEach(function (input) {
+      input.addEventListener('change', sync);
+    });
+    sync();
+  })();
+</script>
+{% endblock %}

@@ -1,0 +1,76 @@
+{% extends 'base/luminary_base.html' %}
+{% block title %}Tutor profiles | EduAI{% endblock %}
+{% block page_title %}Tutor Profiles{% endblock %}
+{% block nav_admin_tutors %}is-active{% endblock %}
+{% block page_subtitle %}
+<p>Subjects, rates and ratings for every published tutor listing.</p>
+{% endblock %}
+
+{% block content %}
+<div class="stack">
+
+  <form method="GET" class="card">
+    <div class="card__body row">
+      <div class="field" style="flex:1;min-width:200px">
+        <label for="f-q" class="sr-only">Search</label>
+        <input type="search" name="q" id="f-q" value="{{ search }}" placeholder="Search username, subject or course">
+      </div>
+      <button type="submit" class="btn btn--primary">Search</button>
+      {% if search %}<a href="/admin-panel/tutors/" class="btn btn--quiet">Clear</a>{% endif %}
+    </div>
+  </form>
+
+  <section class="card">
+    <div class="card__head">
+      <h3>All tutor profiles</h3><span class="spacer"></span>
+      <span class="small muted">{{ profiles|length }} record{{ profiles|length|pluralize }}</span>
+    </div>
+    <div class="tablewrap">
+      <table class="data">
+        <thead>
+          <tr>
+            <th>Tutor</th><th>Subject</th><th class="right">Monthly rate</th>
+            <th class="center">Rating</th><th>Created</th><th class="center">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in profiles %}
+          <tr>
+            <td>
+              <div class="row" style="gap:10px">
+                <span class="avatar avatar--sm">{{ p.user.username|first|upper }}</span>
+                <div>
+                  <a href="/admin-panel/users/{{ p.user.id }}/" class="strong">{{ p.user.username }}</a>
+                  <div class="xsmall muted">{{ p.user.get_full_name|default:"—" }}</div>
+                </div>
+              </div>
+            </td>
+            <td>{% for sub in p.subjects %}{% if not forloop.first %}, {% endif %}{{ sub }}{% empty %}—{% endfor %}</td>
+            <td class="right">{% if p.lowest_rate %}<span class="money num">৳{{ p.lowest_rate|floatformat:"0g" }}</span>
+                <div class="xsmall muted">{{ p.user.courses.count }} course{{ p.user.courses.count|pluralize }}</div>
+                {% else %}<span class="muted">—</span>{% endif %}</td>
+            <td class="center">
+              <span class="rating">
+                <span class="rating__stars">★</span>
+                <span class="rating__value num">{{ p.rating }}</span>
+              </span>
+            </td>
+            <td class="small muted nowrap">{{ p.created_at|date:"M d, Y" }}</td>
+            <td>
+              <div class="cellactions center">
+                <a href="/admin-panel/tutors/{{ p.id }}/edit/" class="iconbtn" title="Edit">✎</a>
+                <a href="/admin-panel/tutors/{{ p.id }}/delete/" class="iconbtn iconbtn--danger" title="Delete">✕</a>
+              </div>
+            </td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="6">
+            <div class="empty"><h3>No tutor profiles</h3><p>Tutors appear here once they publish a listing.</p></div>
+          </td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>
+{% endblock %}

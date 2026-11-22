@@ -1,0 +1,112 @@
+{% extends 'base/luminary_base.html' %}
+{% block title %}Admin overview | EduAI{% endblock %}
+{% block page_title %}Admin overview{% endblock %}
+{% block nav_dashboard %}is-active{% endblock %}
+{% block page_subtitle %}
+<p>Users, bookings, payments and reviews across the whole platform.</p>
+{% endblock %}
+
+{% block content %}
+<div class="stack">
+
+  {% if pending_payments or pending_bookings %}
+  <div class="row">
+    {% if pending_payments %}
+    <a href="/payments/manage/?status=pending" class="alert alert--warning" style="text-decoration:none">
+      <span><strong>{{ pending_payments }}</strong> payment{{ pending_payments|pluralize }} awaiting approval</span>
+    </a>
+    {% endif %}
+    {% if pending_bookings %}
+    <a href="/admin-panel/bookings/?status=pending" class="alert alert--info" style="text-decoration:none">
+      <span><strong>{{ pending_bookings }}</strong> booking{{ pending_bookings|pluralize }} pending confirmation</span>
+    </a>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  <div class="grid grid--stats">
+    <div class="stat stat--blue">
+      <div class="stat__label">Users</div><div class="stat__value">{{ total_users }}</div>
+      <div class="stat__note">{{ total_students }} student{{ total_students|pluralize }} · {{ total_tutors }} tutor{{ total_tutors|pluralize }}</div>
+    </div>
+    <div class="stat stat--blue">
+      <div class="stat__label">Bookings</div><div class="stat__value">{{ total_bookings }}</div>
+      {% if pending_bookings %}<div class="stat__note">{{ pending_bookings }} pending</div>{% endif %}
+    </div>
+    <div class="stat stat--green">
+      <div class="stat__label">Revenue</div><div class="stat__value" style="font-size:1.5rem">৳{{ total_revenue|floatformat:"0g" }}</div>
+      <div class="stat__note">{{ total_payments }} approved</div>
+    </div>
+    <div class="stat stat--violet">
+      <div class="stat__label">Commission</div><div class="stat__value" style="font-size:1.5rem">৳{{ total_commission|floatformat:"0g" }}</div>
+      <div class="stat__note">platform earned</div>
+    </div>
+    <div class="stat stat--amber">
+      <div class="stat__label">Reviews</div><div class="stat__value">{{ total_reviews }}</div>
+    </div>
+  </div>
+
+  <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr))">
+
+    <section class="card">
+      <div class="card__head"><h3>Recent users</h3><span class="spacer"></span>
+        <a href="/admin-panel/users/" class="small">View all</a></div>
+      <div class="divide">
+        {% for u in recent_users %}
+        <a href="/admin-panel/users/{{ u.id }}/" class="card__body row" style="padding-top:12px;padding-bottom:12px;color:inherit;text-decoration:none">
+          <span class="avatar avatar--sm">{{ u.username|first|upper }}</span>
+          <div style="min-width:0">
+            <div class="strong small">{{ u.username }}</div>
+            <div class="xsmall muted">{{ u.get_role_display|default:u.role }}</div>
+          </div>
+          <span class="spacer"></span>
+          <span class="pill {% if u.is_active %}pill--approved{% else %}pill--rejected{% endif %}">
+            {% if u.is_active %}Active{% else %}Inactive{% endif %}</span>
+        </a>
+        {% empty %}
+        <div class="card__body"><p class="muted small">No users yet.</p></div>
+        {% endfor %}
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card__head"><h3>Recent bookings</h3><span class="spacer"></span>
+        <a href="/admin-panel/bookings/" class="small">View all</a></div>
+      <div class="divide">
+        {% for b in recent_bookings %}
+        <div class="card__body row" style="padding-top:12px;padding-bottom:12px">
+          <div style="min-width:0">
+            <div class="strong small">{{ b.student.username }} → {{ b.tutor.username }}</div>
+            <div class="xsmall muted">{{ b.months }} month{{ b.months|pluralize }} · {{ b.date|date:"M d" }}</div>
+          </div>
+          <span class="spacer"></span>
+          <span class="pill pill--{{ b.status }}">{{ b.get_status_display }}</span>
+        </div>
+        {% empty %}
+        <div class="card__body"><p class="muted small">No bookings yet.</p></div>
+        {% endfor %}
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card__head"><h3>Recent payments</h3><span class="spacer"></span>
+        <a href="/payments/manage/" class="small">View all</a></div>
+      <div class="divide">
+        {% for p in recent_payments %}
+        <div class="card__body row" style="padding-top:12px;padding-bottom:12px">
+          <div style="min-width:0">
+            <div class="money num small">৳{{ p.amount|floatformat:"0g" }}</div>
+            <div class="xsmall muted">{{ p.booking.student.username }} · {{ p.get_payment_method_display }}</div>
+          </div>
+          <span class="spacer"></span>
+          <span class="pill pill--{{ p.status }}">{{ p.get_status_display }}</span>
+        </div>
+        {% empty %}
+        <div class="card__body"><p class="muted small">No payments yet.</p></div>
+        {% endfor %}
+      </div>
+    </section>
+
+  </div>
+</div>
+{% endblock %}

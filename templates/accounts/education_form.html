@@ -1,0 +1,177 @@
+{% extends 'base/luminary_base.html' %}
+{% block title %}{% if is_new %}Add education{% else %}Edit education{% endif %} | EduAI{% endblock %}
+{% block page_title %}{% if is_new %}Add education{% else %}Edit education{% endif %}{% endblock %}
+{% block nav_education %}is-active{% endblock %}
+{% block breadcrumbs %}
+<nav class="crumbs" aria-label="Breadcrumb">
+  <a href="/accounts/profile/">My Profile</a> <span aria-hidden="true">/</span>
+  <a href="/accounts/education/">Educational Background</a> <span aria-hidden="true">/</span>
+  <span>{% if is_new %}Add{% else %}Edit{% endif %}</span>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="container--narrow" style="padding:0;max-width:560px">
+<form method="POST" enctype="multipart/form-data" class="card">
+  {% csrf_token %}
+  <div class="card__body stack">
+
+    <div class="field">
+      <label for="f-level">Education level</label>
+      <select name="education_level" id="f-level" required>
+        <option value="">Select level</option>
+        {% for value, label in level_choices %}
+        <option value="{{ value }}"
+          {% if form %}{% if form.education_level == value %}selected{% endif %}
+          {% elif entry.education_level == value %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="field">
+      <label for="f-institution" id="f-institution-label">Institution name</label>
+      <input type="text" name="institution" id="f-institution" required maxlength="150"
+             placeholder="e.g. Dhaka University"
+             value="{% if form %}{{ form.institution }}{% else %}{{ entry.institution|default:'' }}{% endif %}">
+    </div>
+
+    <div class="field" id="f-degree-row">
+      <label for="f-degree">Degree / Program name</label>
+      <input type="text" name="degree" id="f-degree" maxlength="100"
+             placeholder="e.g. BSc in CSE"
+             value="{% if form %}{{ form.degree }}{% else %}{{ entry.degree|default:'' }}{% endif %}">
+    </div>
+
+    <div class="field">
+      <label for="f-field" id="f-field-label">Department / Major</label>
+      <input type="text" name="field_of_study" id="f-field" maxlength="150"
+             placeholder="e.g. Computer Science"
+             value="{% if form %}{{ form.field_of_study }}{% else %}{{ entry.field_of_study|default:'' }}{% endif %}">
+    </div>
+
+    <div class="field" id="f-start-row">
+      <label id="f-start-row-label">Start</label>
+      <div class="row" style="gap:8px">
+        <select name="start_month" id="f-start-month" style="max-width:150px">
+          <option value="">Month</option>
+          {% for value, label in month_choices %}
+          <option value="{{ value }}"
+            {% if form %}{% if form.start_month == value|stringformat:"s" %}selected{% endif %}
+            {% elif entry.start_month == value %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+        <input type="number" name="start_year" id="f-start-year" min="1950" max="2100"
+               placeholder="Year, e.g. 2022" style="max-width:160px"
+               value="{% if form %}{{ form.start_year }}{% else %}{{ entry.start_year|default:'' }}{% endif %}">
+      </div>
+    </div>
+
+    <div class="field">
+      <label id="f-end-row-label">Graduation / completion</label>
+      <div class="row" style="gap:8px">
+        <select name="end_month" id="f-end-month" style="max-width:150px">
+          <option value="">Month</option>
+          {% for value, label in month_choices %}
+          <option value="{{ value }}"
+            {% if form %}{% if form.end_month == value|stringformat:"s" %}selected{% endif %}
+            {% elif entry.end_month == value %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+        <input type="number" name="end_year" id="f-end-year" min="1950" max="2100"
+               placeholder="Year, e.g. 2026" style="max-width:160px"
+               value="{% if form %}{{ form.end_year }}{% else %}{{ entry.end_year|default:'' }}{% endif %}">
+      </div>
+      <p class="xsmall muted" id="f-end-hint">Leave the year blank if you are not sure yet.</p>
+    </div>
+
+    <label class="choice">
+      <input type="checkbox" name="currently_studying" id="f-current"
+             {% if form %}{% if form.currently_studying %}checked{% endif %}{% elif entry.currently_studying %}checked{% endif %}>
+      <span>I am currently studying here</span>
+    </label>
+
+    <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(min(100%,160px),1fr));gap:16px">
+      <div class="field">
+        <label for="f-gpa" id="f-gpa-label">GPA / CGPA</label>
+        <input type="number" name="gpa" id="f-gpa" step="0.01" min="0" max="10"
+               placeholder="e.g. 5.00"
+               value="{% if form %}{{ form.gpa }}{% else %}{{ entry.gpa|default:'' }}{% endif %}">
+      </div>
+      <div class="field">
+        <label for="f-gpa-scale">Out of (scale)</label>
+        <input type="number" name="gpa_scale" id="f-gpa-scale" step="0.01" min="0" max="10"
+               placeholder="e.g. 5.00"
+               value="{% if form %}{{ form.gpa_scale }}{% else %}{{ entry.gpa_scale|default:'' }}{% endif %}">
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="f-document">Academic result / document (optional)</label>
+      {% if entry.document %}
+      <p class="small">
+        <a href="/accounts/education/{{ entry.id }}/document/" target="_blank" rel="noopener">View current document</a>
+      </p>
+      {% endif %}
+      <input type="file" name="document" id="f-document" accept=".pdf,image/jpeg,image/png,image/webp">
+      <span class="field__hint">
+        {% if entry.document %}Upload a new file to replace it, or leave blank to keep the current one. {% endif %}
+        PDF, JPG, PNG or WEBP, up to 10MB — a certificate, transcript or result slip, where verification needs one.
+      </span>
+    </div>
+
+    <div class="field">
+      <label for="f-desc">Additional academic information (optional)</label>
+      <textarea name="description" id="f-desc" rows="3"
+                placeholder="Anything else worth noting">{% if form %}{{ form.description }}{% else %}{{ entry.description|default:'' }}{% endif %}</textarea>
+    </div>
+
+  </div>
+  <div class="card__foot row">
+    <button type="submit" class="btn btn--primary">{% if is_new %}Add{% else %}Save changes{% endif %}</button>
+    <a href="/accounts/education/" class="btn btn--quiet">Cancel</a>
+  </div>
+</form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  (function () {
+    var PRE_UNIVERSITY = {{ pre_university_levels|safe|default:"[]" }};
+    var level = document.getElementById('f-level');
+    var degreeRow = document.getElementById('f-degree-row');
+    var startMonth = document.getElementById('f-start-month');
+    var endMonth = document.getElementById('f-end-month');
+    var institutionLabel = document.getElementById('f-institution-label');
+    var fieldLabel = document.getElementById('f-field-label');
+    var startRowLabel = document.getElementById('f-start-row-label');
+    var endRowLabel = document.getElementById('f-end-row-label');
+    var gpaLabel = document.getElementById('f-gpa-label');
+    var checkbox = document.getElementById('f-current');
+
+    function syncLevel() {
+      var isPreUniversity = PRE_UNIVERSITY.indexOf(level.value) !== -1;
+      degreeRow.hidden = isPreUniversity;
+      startMonth.hidden = isPreUniversity;
+      endMonth.hidden = isPreUniversity;
+      institutionLabel.textContent = isPreUniversity ? 'School / college name' : 'University name';
+      fieldLabel.textContent = isPreUniversity ? 'Group (Science / Commerce / Arts)' : 'Department / Major';
+      startRowLabel.textContent = isPreUniversity ? 'Start year (optional)' : 'Start date';
+      gpaLabel.textContent = isPreUniversity ? 'GPA' : 'CGPA';
+      syncCurrent();
+    }
+
+    function syncCurrent() {
+      var isPreUniversity = PRE_UNIVERSITY.indexOf(level.value) !== -1;
+      if (checkbox.checked) {
+        endRowLabel.textContent = isPreUniversity ? 'Expected passing year' : 'Expected graduation';
+      } else {
+        endRowLabel.textContent = isPreUniversity ? 'Passing year' : 'Graduation / completion';
+      }
+    }
+
+    if (level) { level.addEventListener('change', syncLevel); syncLevel(); }
+    if (checkbox) { checkbox.addEventListener('change', syncCurrent); }
+  })();
+</script>
+{% endblock %}

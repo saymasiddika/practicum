@@ -1,0 +1,130 @@
+{% extends 'base/luminary_base.html' %}
+{% block title %}{% if user.role == 'tutor' %}My students{% else %}My bookings{% endif %} | EduAI{% endblock %}
+{% block page_title %}{% if user.role == 'tutor' %}My Students{% else %}My Bookings{% endif %}{% endblock %}
+{% block nav_bookings %}is-active{% endblock %}
+{% block nav_students %}is-active{% endblock %}
+{% block page_subtitle %}
+<p>{% if user.role == 'tutor' %}Students who have booked a course with you.{% else %}Every course you've booked, and where each one stands.{% endif %}</p>
+{% endblock %}
+{% block topbar_action %}
+  {% if user.role == 'student' %}
+  <a href="/bookings/create/" class="btn btn--primary btn--sm">Book a tutor</a>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+
+{% if not bookings %}
+<div class="card">
+  <div class="empty">
+    {% if user.role == 'tutor' %}
+    <h3>No students yet</h3>
+    <p>Complete your tutor profile and add schedule slots so students can find and book you.</p>
+    <a href="/tutors/edit-profile/" class="btn btn--primary">Edit tutor profile</a>
+    {% else %}
+    <h3>You haven't booked a tutor yet</h3>
+    <p>Browse tutors by subject and rate, then book a course by the month.</p>
+    <a href="/tutors/" class="btn btn--primary">Find a tutor</a>
+    {% endif %}
+  </div>
+</div>
+
+{% elif user.role == 'tutor' %}
+<div class="stack">
+  {% for booking in bookings %}
+  <article class="card">
+    <div class="card__body">
+      <div class="row row--between">
+        <div class="row">
+          <span class="avatar avatar--lg">{{ booking.student.username|upper|first }}</span>
+          <div class="stack-s" style="gap:4px">
+            <h3>{{ booking.student.get_full_name|default:booking.student.username }}</h3>
+            <p class="small muted">
+              Starts {{ booking.date|date:'M d, Y' }} · {{ booking.months }} month{{ booking.months|pluralize }}
+              {% if booking.course %} · {{ booking.course.schedule_display }}{% endif %}
+            </p>
+            <div class="row" style="gap:8px">
+              <span class="pill pill--{{ booking.status }}">{{ booking.get_status_display }}</span>
+              {% if booking.payment %}
+              <span class="pill pill--{{ booking.payment.status }}">Payment: {{ booking.payment.get_status_display }}</span>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+        <div class="cellactions">
+          <a href="/bookings/{{ booking.id }}/" class="btn btn--quiet btn--sm">View</a>
+          {% if booking.status == 'pending' %}
+          <form method="POST" action="/bookings/{{ booking.id }}/confirm/" class="inline-form">{% csrf_token %}
+            <button type="submit" class="btn btn--success btn--sm">Confirm</button></form>
+          <form method="POST" action="/bookings/{{ booking.id }}/reject/" class="inline-form">{% csrf_token %}
+            <button type="submit" class="btn btn--danger btn--sm">Decline</button></form>
+          {% endif %}
+        </div>
+      </div>
+
+      {% if booking.payment and booking.payment.status == 'approved' %}
+      <div class="grid grid--stats" style="margin-top:20px;padding-top:20px;border-top:1px solid var(--line)">
+        <div>
+          <div class="eyebrow">Student email</div>
+          <p class="small">{{ booking.student.email|default:"Not provided" }}</p>
+        </div>
+        <div>
+          <div class="eyebrow">Amount paid</div>
+          <p class="money num">৳{{ booking.total_paid|floatformat:"0g" }}</p>
+        </div>
+        {% if booking.meet_link %}
+        <div>
+          <div class="eyebrow">Meeting link</div>
+          <a href="{{ booking.meet_link }}" target="_blank" rel="noopener" class="small">{{ booking.meet_link|truncatechars:32 }}</a>
+        </div>
+        {% endif %}
+      </div>
+      {% endif %}
+    </div>
+  </article>
+  {% endfor %}
+</div>
+
+{% else %}
+<section>
+  {% for booking in bookings %}
+  <article class="tutorcard">
+    <span class="avatar avatar--lg">{{ booking.tutor.username|upper|first }}</span>
+
+    <div>
+      <h3 class="tutorcard__title">{{ booking.tutor.get_full_name|default:booking.tutor.username }}</h3>
+      <p class="tutorcard__bio">
+        {% if booking.course %}{{ booking.course.subject }} · {% endif %}
+        {{ booking.date|date:'M d, Y' }} · {{ booking.months }} month{{ booking.months|pluralize }}
+        {% if booking.course %} · {{ booking.course.schedule_display }}{% endif %}
+      </p>
+    </div>
+
+    <div class="stack-s" style="gap:7px">
+      <span class="pill pill--{{ booking.status }}">{{ booking.get_status_display }}</span>
+      {% if booking.payment %}
+      <span class="pill pill--{{ booking.payment.status }}">{{ booking.payment.get_status_display }}</span>
+      {% endif %}
+    </div>
+
+    <div class="tutorcard__meta">
+      <div class="money num" style="font-size:1.05rem">৳{{ booking.total_paid|floatformat:"0g" }}</div>
+      <div class="xsmall muted" style="margin-bottom:10px">of ৳{{ booking.total_amount|floatformat:"0g" }} paid</div>
+      <div class="cellactions" style="justify-content:flex-end">
+        {% if booking.is_payable %}
+        <a href="/payments/create/?booking_id={{ booking.id }}" class="btn btn--primary btn--sm">Pay now</a>
+        {% elif booking.status == 'pending' %}
+        <span class="xsmall muted">Awaiting tutor</span>
+        {% endif %}
+        {% if booking.status == 'completed' and not booking.review %}
+        <a href="/reviews/create/?booking={{ booking.id }}" class="btn btn--secondary btn--sm">Review</a>
+        {% endif %}
+        <a href="/bookings/{{ booking.id }}/" class="btn btn--quiet btn--sm">Details</a>
+      </div>
+    </div>
+  </article>
+  {% endfor %}
+</section>
+{% endif %}
+
+{% endblock %}

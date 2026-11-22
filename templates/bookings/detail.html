@@ -1,0 +1,314 @@
+{% extends 'base/luminary_base.html' %}
+{% block title %}Booking #{{ booking.id }} | EduAI{% endblock %}
+{% block page_title %}Booking #{{ booking.id }}{% endblock %}
+{% block nav_bookings %}is-active{% endblock %}
+{% block nav_students %}is-active{% endblock %}
+
+{% block breadcrumbs %}
+<nav class="crumbs" aria-label="Breadcrumb">
+  <a href="/">Home</a> <span aria-hidden="true">/</span>
+  <a href="/bookings/">{% if user.role == 'tutor' %}My Students{% else %}My Bookings{% endif %}</a>
+  <span aria-hidden="true">/</span> <span>Booking #{{ booking.id }}</span>
+</nav>
+{% endblock %}
+
+{% block page_subtitle %}
+<div class="row" style="margin-top:10px">
+  <span class="pill pill--{{ booking.status }}">{{ booking.get_status_display }}</span>
+  {% if booking.is_fully_paid %}
+    <span class="pill pill--approved">Fully paid</span>
+  {% elif booking.total_paid > 0 %}
+    <span class="pill pill--pending">৳{{ booking.total_paid|floatformat:"0g" }} paid</span>
+  {% else %}
+    <span class="pill pill--cancelled">Unpaid</span>
+  {% endif %}
+  <span class="small muted">Created {{ booking.created_at|date:'M d, Y' }}</span>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="grid grid--detail">
+
+  <div class="stack">
+
+    {% if booking.status == 'pending' and user == booking.student %}
+    <div class="alert alert--info">
+      <span>
+        <strong>Waiting for {{ booking.tutor.get_full_name|default:booking.tutor.username }} to confirm.</strong>
+        You&rsquo;ll be able to pay once they accept — nothing is owed until then,
+        and you can cancel free of charge in the meantime.
+      </span>
+    </div>
+    {% endif %}
+
+    <section class="card">
+      <div class="card__head"><h3>Course details</h3></div>
+      <div class="card__body">
+        <div class="grid grid--stats">
+          <div>
+            <div class="eyebrow">Start date</div>
+            <p class="strong">{{ booking.date|date:'l, M d, Y' }}</p>
+          </div>
+          <div>
+            <div class="eyebrow">Duration</div>
+            <p class="strong">{{ booking.months }} month{{ booking.months|pluralize }}</p>
+          </div>
+          {% if booking.course %}
+          <div>
+            <div class="eyebrow">Schedule</div>
+            <p class="strong">{{ booking.course.schedule_display }}</p>
+          </div>
+          {% endif %}
+          <div>
+            <div class="eyebrow">Agreed rate</div>
+            <p class="strong num">৳{{ booking.monthly_rate|floatformat:"0g" }} / month</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    {% if user.role == 'student' and booking.status == 'confirmed' and booking.payment and booking.payment.status == 'approved' %}
+      {% if booking.tutor_message or booking.meet_link %}
+      <section class="card">
+        <div class="card__head"><h3>Message from your tutor</h3></div>
+        <div class="card__body stack">
+          {% if booking.tutor_message %}<p>{{ booking.tutor_message|linebreaksbr }}</p>{% endif %}
+          {% if booking.meet_link %}
+          <div class="row row--between" style="background:var(--green-tint);border-left:4px solid var(--green);padding:14px 16px">
+            <span class="strong">Your session link is ready</span>
+            <a href="{{ booking.meet_link }}" target="_blank" rel="noopener" class="btn btn--success btn--sm">Join session</a>
+          </div>
+          {% endif %}
+        </div>
+      </section>
+      {% else %}
+      <div class="alert alert--info"><span>Your tutor hasn't added meeting details yet. They'll appear here.</span></div>
+      {% endif %}
+    {% endif %}
+
+    {% if user.role == 'tutor' and booking.status == 'confirmed' and booking.payment and booking.payment.status == 'approved' %}
+    <section class="card">
+      <div class="card__head"><h3>Session link and message</h3></div>
+      <form method="POST" action="/bookings/{{ booking.id }}/tutor-update/">
+        <div class="card__body stack">
+          {% csrf_token %}
+          <div class="field">
+            <label for="f-link">Meeting link</label>
+            <input type="url" name="meet_link" id="f-link" value="{{ booking.meet_link }}"
+                   placeholder="https://meet.google.com/xxx-xxxx-xxx">
+            <span class="field__hint">Must start with http:// or https://</span>
+          </div>
+          <div class="field">
+            <label for="f-msg">Message to your student</label>
+            <textarea name="tutor_message" id="f-msg" rows="4"
+                      placeholder="Schedule notes, what to prepare, anything they should know.">{{ booking.tutor_message }}</textarea>
+          </div>
+        </div>
+        <div class="card__foot"><button type="submit" class="btn btn--primary">Send to student</button></div>
+      </form>
+    </section>
+    {% endif %}
+
+    {% if user.role == 'tutor' and booking.status == 'pending' %}
+    <section class="card">
+      <div class="card__head"><h3>Respond to this request</h3></div>
+      <div class="card__body row">
+        <form method="POST" action="/bookings/{{ booking.id }}/confirm/" class="inline-form">{% csrf_token %}
+          <button type="submit" class="btn btn--success">Confirm booking</button></form>
+        <form method="POST" action="/bookings/{{ booking.id }}/reject/" class="inline-form">{% csrf_token %}
+          <button type="submit" class="btn btn--danger">Decline</button></form>
+      </div>
+    </section>
+    {% endif %}
+
+    {% if booking.open_request %}
+    <section class="card">
+      <div class="card__head"><h3>Waiting on an admin</h3></div>
+      <div class="card__body stack-s">
+        <p class="small">
+          <strong>{{ booking.open_request.get_kind_display }}</strong> was requested
+          on {{ booking.open_request.created_at|date:"F j, Y" }} by
+          {% if booking.open_request.requested_by == user %}you{% else %}{{ booking.open_request.requested_by.username }}{% endif %}.
+        </p>
+        <p class="small muted">&ldquo;{{ booking.open_request.reason }}&rdquo;</p>
+        {% if booking.open_request.refund_amount > 0 %}
+        <p class="small">
+          If approved, <strong>৳{{ booking.open_request.refund_amount|floatformat:"0g" }}</strong>
+          ({{ booking.open_request.refund_percent }}%) will be refunded via
+          {{ booking.open_request.get_payout_method_display|lower }}.
+        </p>
+        {% endif %}
+        <p class="xsmall muted">Nothing changes until it is reviewed.</p>
+      </div>
+    </section>
+    {% endif %}
+
+    {% if booking.status == 'confirmed' %}
+      {% if user.role == 'tutor' or user == booking.student and booking.payment and booking.payment.status == 'approved' %}
+      <section class="card">
+        <div class="card__head"><h3>Finished the course?</h3></div>
+        <div class="card__body stack-s">
+          {% if booking.has_run_its_course %}
+          <p class="small muted">The booked months have run. Mark it complete and the student can leave a review.</p>
+          <form method="POST" action="/bookings/{{ booking.id }}/complete/" class="inline-form"
+                onsubmit="return confirm('Mark this booking as completed?')">
+            {% csrf_token %}
+            <button type="submit" class="btn btn--secondary">Mark as completed</button>
+          </form>
+          {% elif booking.can_request_early_end %}
+          <p class="small muted">
+            This course runs until {{ booking.natural_end_date|date:"F j, Y" }}. If it
+            has finished sooner, give a reason and an admin will review it.
+          </p>
+          <a href="/bookings/{{ booking.id }}/end/?kind=complete" class="btn btn--secondary">
+            Request early completion
+          </a>
+          {% endif %}
+        </div>
+      </section>
+      {% endif %}
+
+      {% if booking.can_request_early_end %}
+      <section class="card">
+        <div class="card__head"><h3>Need to stop?</h3></div>
+        <div class="card__body stack-s">
+          <p class="small muted">
+            {% if user == booking.student %}
+              Pulling out early needs a reason an admin can verify. What you get
+              back depends on how far into the course you are &mdash; the form
+              shows the figure before you commit.
+            {% else %}
+              If you cannot continue teaching this course, give a reason for an
+              admin to review. The student is refunded for whatever you have not
+              taught.
+            {% endif %}
+          </p>
+          <a href="/bookings/{{ booking.id }}/end/?kind=terminate" class="btn btn--quiet">
+            End this booking
+          </a>
+        </div>
+      </section>
+      {% endif %}
+    {% endif %}
+
+    {% with last=booking.requests.first %}
+      {% if last and last.status == 'declined' %}
+      <section class="card">
+        <div class="card__head"><h3>Last request declined</h3></div>
+        <div class="card__body stack-s">
+          <p class="small">Your request to {{ last.get_kind_display|lower }} was declined
+             on {{ last.reviewed_at|date:"F j, Y" }}.</p>
+          {% if last.admin_note %}
+          <p class="small muted">&ldquo;{{ last.admin_note }}&rdquo;</p>
+          {% endif %}
+          {% if booking.status == 'confirmed' %}<p class="xsmall muted">The booking carries on as normal. You may ask again.</p>{% endif %}
+        </div>
+      </section>
+      {% endif %}
+    {% endwith %}
+
+    {% if booking.review %}
+    <section class="card">
+      <div class="card__head"><h3>Review</h3></div>
+      <div class="card__body stack-s">
+        <span class="rating__stars">{% for i in "12345" %}{% if forloop.counter <= booking.review.rating %}★{% else %}☆{% endif %}{% endfor %}</span>
+        <p>{{ booking.review.comment }}</p>
+      </div>
+    </section>
+    {% elif user == booking.student and booking.status == 'completed' %}
+    <a href="/reviews/create/?booking={{ booking.id }}" class="btn btn--secondary btn--block">Write a review</a>
+    {% endif %}
+  </div>
+
+  <aside class="stack">
+
+    <div class="card">
+      <div class="card__head"><h3>{% if user.role == 'tutor' %}Student{% else %}Tutor{% endif %}</h3></div>
+      <div class="card__body stack">
+        {% if user.role == 'tutor' %}
+        <div class="row">
+          <span class="avatar avatar--lg">{{ booking.student.username|upper|first }}</span>
+          <div>
+            <p class="strong">{{ booking.student.get_full_name|default:booking.student.username }}</p>
+            <p class="xsmall muted">@{{ booking.student.username }}</p>
+          </div>
+        </div>
+        {% if booking.payment and booking.payment.status == 'approved' %}
+          <dl class="deflist"><dt>Email</dt><dd>{{ booking.student.email|default:"Not provided" }}</dd></dl>
+          {% if booking.student.email %}
+          <a href="mailto:{{ booking.student.email }}" class="btn btn--quiet btn--block btn--sm">Email student</a>
+          {% endif %}
+        {% else %}
+          <div class="notice">Contact details unlock once payment is approved.</div>
+        {% endif %}
+        {% else %}
+        <div class="row">
+          <span class="avatar avatar--lg">{{ booking.tutor.username|upper|first }}</span>
+          <div>
+            <p class="strong">{{ booking.tutor.get_full_name|default:booking.tutor.username }}</p>
+            {% if booking.course %}<p class="xsmall muted">{{ booking.course.name }}</p>{% endif %}
+          </div>
+        </div>
+        {% if booking.tutor.tutor_profile %}
+        <dl class="deflist">
+          <dt>Rating</dt><dd class="num">{{ booking.tutor.tutor_profile.rating }} / 5</dd>
+          <dt>Rate</dt><dd class="num">৳{{ booking.monthly_rate|floatformat:"0g" }}/mo</dd>
+        </dl>
+        {% endif %}
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card__head">
+        <h3>Payments</h3>
+        <span class="spacer"></span>
+        {% if booking.is_payable and user == booking.student %}
+        <a href="/payments/create/?booking_id={{ booking.id }}" class="btn btn--primary btn--sm">Pay</a>
+        {% endif %}
+      </div>
+      <div class="card__body stack-s">
+        <div class="row row--between small">
+          <span><span class="money num">৳{{ booking.total_paid|floatformat:"0g" }}</span> paid</span>
+          <span class="muted num">of ৳{{ booking.total_amount|floatformat:"0g" }}</span>
+        </div>
+        <div class="meter meter--green">
+          {% if booking.total_amount > 0 %}{% widthratio booking.total_paid booking.total_amount 100 as pct %}
+          <i style="width:{{ pct }}%"></i>{% endif %}
+        </div>
+        {% if booking.balance_due > 0 %}
+        <p class="xsmall" style="color:var(--red)">৳{{ booking.balance_due|floatformat:"0g" }} remaining</p>
+        {% else %}
+        <p class="xsmall" style="color:var(--green)">Fully paid</p>
+        {% endif %}
+      </div>
+
+      {% if booking.payments.all %}
+      <div class="divide">
+        {% for p in booking.payments.all %}
+        <div class="card__body stack-s" style="padding-top:14px;padding-bottom:14px">
+          <div class="row row--between">
+            <span class="money num">৳{{ p.amount|floatformat:"0g" }}</span>
+            <span class="pill pill--{{ p.status }}">{{ p.get_status_display }}</span>
+          </div>
+          <p class="xsmall muted">
+            {{ p.get_payment_method_display }} · {{ p.created_at|date:"M d, Y" }}
+            {% if user.role == 'tutor' %}· you receive <span class="num">৳{{ p.tutor_income|floatformat:"0g" }}</span>{% endif %}
+          </p>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+
+    {% if user == booking.student and booking.is_cancellable %}
+    <form method="POST" action="/bookings/{{ booking.id }}/cancel/"
+          onsubmit="return confirm('Cancel this booking? This cannot be undone.')">
+      {% csrf_token %}
+      <button type="submit" class="btn btn--quiet btn--block">Cancel booking</button>
+    </form>
+    {% endif %}
+
+  </aside>
+</div>
+{% endblock %}

@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+{% load static %}
+{% load assets %}
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>{% block title %}EduAI{% endblock %}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+{# Inter has no ৳. Without this the browser borrows the sign from whatever font it finds, and it comes out a different size and shape from the digits beside it. #}
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;600;700&text=%E0%A7%B3&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0..1,0&display=block" rel="stylesheet"/>
+<link rel="stylesheet" href="{% static_v 'css/eduai.css' %}"/>
+<style>{% block extra_style %}{% endblock %}</style>
+</head>
+<body>
+<div class="app">
+
+<!-- Sidebar -->
+<aside class="sidebar">
+  <a href="/" class="brand">
+    <span class="brand__tile"><span class="ms" aria-hidden="true">school</span></span>
+    EduAI
+  </a>
+
+  <nav class="sidenav" aria-label="Main">
+    {% if user.is_authenticated %}
+    <a href="/dashboard/" class="{% block nav_dashboard %}{% endblock %}"><span class="ms" aria-hidden="true">dashboard</span> Dashboard</a>
+    {% endif %}
+
+    {% if not user.is_authenticated %}
+    <a href="/"><span class="ms" aria-hidden="true">home</span> Home</a>
+    <a href="/tutors/" class="{% block nav_browse %}{% endblock %}"><span class="ms" aria-hidden="true">search</span> Find Tutors</a>
+    <a href="/reviews/" class="{% block nav_reviews %}{% endblock %}"><span class="ms" aria-hidden="true">star_rate</span> Student Reviews</a>
+    {% elif user.is_superuser or user.is_staff %}
+    <a href="/payments/manage/" class="{% block nav_pay_admin %}{% endblock %}"><span class="ms" aria-hidden="true">payments</span> Payment Review</a>
+    <a href="/admin-panel/users/" class="{% block nav_admin_users %}{% endblock %}"><span class="ms" aria-hidden="true">manage_accounts</span> User Management</a>
+    <a href="/admin-panel/bookings/" class="{% block nav_all_bookings %}{% endblock %}"><span class="ms" aria-hidden="true">book_online</span> All Bookings</a>
+    <a href="/admin-panel/tutors/" class="{% block nav_admin_tutors %}{% endblock %}"><span class="ms" aria-hidden="true">school</span> Tutor Profiles</a>
+    <a href="/admin-panel/reviews/" class="{% block nav_admin_reviews %}{% endblock %}"><span class="ms" aria-hidden="true">star_rate</span> Reviews</a>
+    <a href="/admin-panel/requests/" class="{% block nav_admin_requests %}{% endblock %}"><span class="ms" aria-hidden="true">assignment_return</span> Early-end Requests</a>
+    <a href="/admin-panel/chat/" class="{% block nav_admin_chat %}{% endblock %}"><span class="ms" aria-hidden="true">forum</span> Assistant Log</a>
+    {% elif user.role == 'student' %}
+    <a href="/tutors/" class="{% block nav_tutors %}{% endblock %}"><span class="ms" aria-hidden="true">search</span> Find Tutors</a>
+    <a href="/bookings/" class="{% block nav_bookings %}{% endblock %}"><span class="ms" aria-hidden="true">menu_book</span> My Bookings</a>
+    <a href="/payments/" class="{% block nav_payments %}{% endblock %}"><span class="ms" aria-hidden="true">payments</span> Payments</a>
+    {% elif user.role == 'tutor' %}
+    <a href="/bookings/" class="{% block nav_students %}{% endblock %}"><span class="ms" aria-hidden="true">groups</span> My Students</a>
+    <a href="/tutors/edit-profile/" class="{% block nav_edit_profile %}{% endblock %}"><span class="ms" aria-hidden="true">badge</span> Tutor Profile</a>
+    <a href="/tutors/courses/" class="{% block nav_courses %}{% endblock %}"><span class="ms" aria-hidden="true">library_books</span> My Courses</a>
+    {% endif %}
+
+    {% if user.is_authenticated and not user.is_staff and not user.is_superuser %}
+    <a href="/accounts/education/" class="{% block nav_education %}{% endblock %}"><span class="ms" aria-hidden="true">school</span> Educational Background</a>
+    {% endif %}
+
+    {% if user.is_authenticated %}
+    <a href="/accounts/profile/" class="{% block nav_profile %}{% endblock %}"><span class="ms" aria-hidden="true">person</span> My Profile</a>
+    {% endif %}
+  </nav>
+
+  <div class="sidebar__foot">
+    {% if user.is_authenticated %}
+    <div class="sidebar__user">
+      {% if user.avatar %}
+        <img src="{{ user.avatar.url }}" alt="" class="avatar" style="width:40px;height:40px;border-radius:9999px">
+      {% else %}
+        <span class="avatar" style="width:40px;height:40px;border-radius:9999px">{{ user.username|upper|first }}</span>
+      {% endif %}
+      <div style="min-width:0">
+        <p class="sidebar__name">{{ user.get_full_name|default:user.username }}</p>
+        <p class="sidebar__role">{% if user.is_superuser or user.is_staff %}Admin{% else %}{{ user.role }}{% endif %}</p>
+      </div>
+    </div>
+    <a href="/accounts/logout/" class="sidebar__logout"><span class="ms" aria-hidden="true">logout</span> Log out</a>
+    {% else %}
+    <a href="/accounts/register/" class="btn btn--primary btn--block">Join for free</a>
+    <a href="/accounts/login/" class="btn btn--secondary btn--block">Log in</a>
+    {% endif %}
+  </div>
+</aside>
+
+<!-- Main -->
+<div class="app__main">
+  <header class="appbar">
+    <a href="/" class="brand brand--compact" aria-label="EduAI home">
+      <span class="brand__tile"><span class="ms" aria-hidden="true">school</span></span>
+    </a>
+    <p class="appbar__title">{% block appbar_title %}{% if user.is_superuser or user.is_staff %}Admin Panel{% elif user.role == 'student' %}Student Portal{% elif user.role == 'tutor' %}Tutor Portal{% else %}EduAI{% endif %}{% endblock %}</p>
+
+    <div class="appbar__right">
+      {% if user.role == 'student' or not user.is_authenticated %}
+      <form class="navsearch" action="/tutors/" method="get" role="search">
+        <span class="ms" aria-hidden="true">search</span>
+        <label class="sr-only" for="nav-search">Search tutors by name or subject</label>
+        <input id="nav-search" type="search" name="search" placeholder="What do you want to learn?"/>
+        <button type="submit">Search</button>
+      </form>
+      {% endif %}
+
+      {% block topbar_action %}{% endblock %}
+
+      {% if user.is_authenticated %}
+      <a href="/accounts/profile/" title="{{ user.username }}">
+        {% if user.avatar %}
+          <img src="{{ user.avatar.url }}" alt="{{ user.username }}" class="avatar"/>
+        {% else %}
+          <span class="avatar">{{ user.username|upper|first }}</span>
+        {% endif %}
+      </a>
+      {% else %}
+      <div class="appbar__guest">
+        <a href="/accounts/login/" class="btn btn--quiet btn--sm">Log in</a>
+        <a href="/accounts/register/" class="btn btn--primary btn--sm">Join</a>
+      </div>
+      {% endif %}
+    </div>
+  </header>
+
+  {% if user.is_superuser or user.is_staff %}
+  <nav class="mobilenav" aria-label="Admin">
+    <a href="/payments/manage/">Payment Review</a>
+    <a href="/admin-panel/users/">User Management</a>
+    <a href="/admin-panel/bookings/">All Bookings</a>
+    <a href="/admin-panel/tutors/">Tutor Profiles</a>
+    <a href="/admin-panel/reviews/">Reviews</a>
+    <a href="/admin-panel/requests/">Early-end Requests</a>
+    <a href="/admin-panel/chat/">Assistant Log</a>
+  </nav>
+  {% endif %}
+
+  {% block pagehead %}
+  <div class="pagehead">
+    <div class="container">
+      {% block breadcrumbs %}{% endblock %}
+      <div class="pagehead__title">
+        <h1>{% block page_title %}EduAI{% endblock %}</h1>
+      </div>
+      {% block page_subtitle %}{% endblock %}
+    </div>
+  </div>
+  {% endblock %}
+
+  {% block main %}
+  <main class="page">
+    <div class="container">
+      {% if messages %}
+      <div class="stack-s" style="margin-bottom:24px">
+        {% for msg in messages %}
+        <div class="alert {% if 'error' in msg.tags %}alert--error{% elif 'warning' in msg.tags %}alert--warning{% elif 'info' in msg.tags %}alert--info{% else %}alert--success{% endif %}">
+          <span class="ms" aria-hidden="true">{% if 'error' in msg.tags %}error{% elif 'warning' in msg.tags %}warning{% elif 'info' in msg.tags %}info{% else %}check_circle{% endif %}</span>
+          <span>{{ msg }}</span>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+      {% block content %}{% endblock %}
+    </div>
+  </main>
+  {% endblock %}
+</div>
+</div>
+
+<!-- Mobile bottom bar -->
+<nav class="bottomnav" aria-label="Quick links">
+  {% if not user.is_authenticated %}
+  <a href="/" class="{% if request.path == '/' %}is-active{% endif %}"><span class="ms" aria-hidden="true">home</span>Home</a>
+  <a href="/reviews/" class="{% if request.path == '/reviews/' %}is-active{% endif %}"><span class="ms" aria-hidden="true">star_rate</span>Reviews</a>
+  <a href="/tutors/" aria-label="Find tutors"><span class="bottomnav__fab"><span class="ms" aria-hidden="true">search</span></span></a>
+  <a href="/accounts/register/"><span class="ms" aria-hidden="true">person_add</span>Join</a>
+  {% else %}
+  <a href="/dashboard/" class="{% if request.path == '/dashboard/' %}is-active{% endif %}"><span class="ms" aria-hidden="true">dashboard</span>Home</a>
+  {% if user.is_superuser or user.is_staff %}
+  <a href="/payments/manage/" class="{% if request.path == '/payments/manage/' %}is-active{% endif %}"><span class="ms" aria-hidden="true">payments</span>Payments</a>
+  <a href="/admin-panel/requests/" aria-label="Early-end requests"><span class="bottomnav__fab"><span class="ms" aria-hidden="true">admin_panel_settings</span></span></a>
+  <a href="/admin-panel/bookings/" class="{% if request.path == '/admin-panel/bookings/' %}is-active{% endif %}"><span class="ms" aria-hidden="true">book_online</span>Bookings</a>
+  {% elif user.role == 'student' %}
+  <a href="/bookings/" class="{% if request.path == '/bookings/' %}is-active{% endif %}"><span class="ms" aria-hidden="true">menu_book</span>Bookings</a>
+  <a href="/tutors/" aria-label="Find tutors"><span class="bottomnav__fab"><span class="ms" aria-hidden="true">search</span></span></a>
+  <a href="/payments/" class="{% if request.path == '/payments/' %}is-active{% endif %}"><span class="ms" aria-hidden="true">payments</span>Payments</a>
+  {% elif user.role == 'tutor' %}
+  <a href="/bookings/" class="{% if request.path == '/bookings/' %}is-active{% endif %}"><span class="ms" aria-hidden="true">groups</span>Students</a>
+  <a href="/tutors/courses/add/" aria-label="Add a course"><span class="bottomnav__fab"><span class="ms" aria-hidden="true">add</span></span></a>
+  <a href="/tutors/courses/" class="{% if request.path == '/tutors/courses/' %}is-active{% endif %}"><span class="ms" aria-hidden="true">library_books</span>Courses</a>
+  {% endif %}
+  <a href="/accounts/profile/" class="{% if request.path == '/accounts/profile/' %}is-active{% endif %}"><span class="ms" aria-hidden="true">person</span>Profile</a>
+  {% endif %}
+</nav>
+
+{% include 'chatbot/widget.html' %}
+
+{% block extra_js %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,94 @@
+{% extends 'base/luminary_base.html' %}
+{% block title %}User management | EduAI{% endblock %}
+{% block page_title %}User Management{% endblock %}
+{% block nav_admin_users %}is-active{% endblock %}
+{% block page_subtitle %}
+<p>Every student, tutor and staff account on the platform.</p>
+{% endblock %}
+
+{% block content %}
+<div class="stack">
+
+  <form method="GET" class="card">
+    <div class="card__body row">
+      <div class="field" style="flex:1;min-width:200px">
+        <label for="f-q" class="sr-only">Search</label>
+        <input type="search" name="q" id="f-q" value="{{ search }}" placeholder="Search username, email or name">
+      </div>
+      <div class="field" style="min-width:160px">
+        <label for="f-role" class="sr-only">Role</label>
+        <select name="role" id="f-role">
+          <option value="" {% if not role_filter %}selected{% endif %}>All roles</option>
+          <option value="student" {% if role_filter == 'student' %}selected{% endif %}>Students</option>
+          <option value="tutor" {% if role_filter == 'tutor' %}selected{% endif %}>Tutors</option>
+        </select>
+      </div>
+      <button type="submit" class="btn btn--primary">Filter</button>
+      {% if search or role_filter %}<a href="/admin-panel/users/" class="btn btn--quiet">Clear</a>{% endif %}
+    </div>
+  </form>
+
+  <section class="card">
+    <div class="card__head">
+      <h3>All users</h3><span class="spacer"></span>
+      <span class="small muted">{{ users|length }} record{{ users|length|pluralize }}</span>
+    </div>
+    <div class="tablewrap">
+      <table class="data">
+        <thead>
+          <tr>
+            <th>User</th><th>Email</th><th class="center">Role</th><th class="center">Status</th>
+            <th class="center">Staff</th><th>Joined</th><th class="center">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for u in users %}
+          <tr>
+            <td>
+              <div class="row" style="gap:10px">
+                <span class="avatar avatar--sm">{{ u.username|first|upper }}</span>
+                <div>
+                  <a href="/admin-panel/users/{{ u.id }}/" class="strong">{{ u.username }}</a>
+                  <div class="xsmall muted">{{ u.get_full_name|default:"—" }}</div>
+                </div>
+              </div>
+            </td>
+            <td class="small muted">{{ u.email|default:"—" }}</td>
+            <td class="center">
+              <span class="pill {% if u.role == 'tutor' %}pill--confirmed{% else %}pill--approved{% endif %}">
+                {{ u.role|capfirst|default:"Staff" }}
+              </span>
+            </td>
+            <td class="center">
+              <span class="pill {% if u.is_active %}pill--approved{% else %}pill--rejected{% endif %}">
+                {% if u.is_active %}Active{% else %}Inactive{% endif %}
+              </span>
+            </td>
+            <td class="center">
+              {% if u.is_staff or u.is_superuser %}<span class="pill pill--info">Staff</span>{% else %}<span class="muted">—</span>{% endif %}
+            </td>
+            <td class="small muted nowrap">{{ u.date_joined|date:"M d, Y" }}</td>
+            <td>
+              <div class="cellactions center">
+                <a href="/admin-panel/users/{{ u.id }}/" class="iconbtn" title="View">→</a>
+                {% if user.is_superuser %}
+                <a href="/admin-panel/users/{{ u.id }}/edit/" class="iconbtn" title="Edit">✎</a>
+                <form method="POST" action="/admin-panel/users/{{ u.id }}/toggle/" class="inline-form">
+                  {% csrf_token %}
+                  <button type="submit" class="iconbtn"
+                          title="{% if u.is_active %}Deactivate{% else %}Activate{% endif %}">{% if u.is_active %}⦸{% else %}✓{% endif %}</button>
+                </form>
+                <a href="/admin-panel/users/{{ u.id }}/delete/" class="iconbtn iconbtn--danger" title="Delete">✕</a>
+                {% endif %}
+              </div>
+            </td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="7"><div class="empty"><h3>No users found</h3><p>Try a different search or filter.</p></div></td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>
+{% endblock %}

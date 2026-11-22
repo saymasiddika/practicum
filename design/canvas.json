@@ -1,0 +1,46 @@
+{
+  "artboards": [
+    { "file": "Main.dc.html", "x": 0, "y": 0, "w": 980, "h": 880, "title": "A · Matra" },
+    { "file": "Ledger.dc.html", "x": 1100, "y": 0, "w": 980, "h": 800, "title": "B · Ledger" },
+    { "file": "Slate.dc.html", "x": 0, "y": 1040, "w": 980, "h": 860, "title": "C · Slate" },
+    { "file": "Bazaar.dc.html", "x": 1100, "y": 1040, "w": 980, "h": 900, "title": "D · Bazaar" }
+  ],
+  "annotations": [
+    {
+      "id": "brief",
+      "x": 0,
+      "y": -230,
+      "w": 700,
+      "text": "EduAI — four directions for the same screen.\n\nSame content every time: the hero, the pricing rule (50% first month / 10% after), and three real tutor listings. Only the visual language changes, so you're comparing directions rather than layouts.\n\nPick one and I'll build it through all 30 templates."
+    },
+    {
+      "id": "note-a",
+      "x": 0,
+      "y": 910,
+      "w": 460,
+      "text": "A · MATRA — structure borrowed from Bengali script, where letters hang from a horizontal headline stroke. Every block hangs from a rule; no cards, no shadows, no rounded corners. Indigo and turmeric.\n\nWhy: rooted in Bangladesh without resorting to flag colours.\nTradeoff: austere. Lives or dies on typography being right."
+    },
+    {
+      "id": "note-b",
+      "x": 1100,
+      "y": 830,
+      "w": 460,
+      "text": "B · LEDGER — the product is really months booked and taka settled, so it reads like a register. Mono numerals, ruled rows, one green signal colour, zero decoration.\n\nWhy: honest about what the app does; ages well; very fast to scan.\nTradeoff: cool and transactional — weak at persuading a first-time visitor."
+    },
+    {
+      "id": "note-c",
+      "x": 0,
+      "y": 1930,
+      "w": 460,
+      "text": "C · SLATE — the classroom as material: dark slate ground, warm chalk-gold accent, editorial serif headlines.\n\nWhy: the only warm, human option here; photographs and faces would sit well on it.\nTradeoff: dark UI is harder work across dense admin tables and long forms."
+    },
+    {
+      "id": "note-d",
+      "x": 1100,
+      "y": 1970,
+      "w": 460,
+      "text": "D · BAZAAR — takes its cue from Bangladeshi street print and signage: heavy display type, flat colour blocks, thick black rules, no gradients.\n\nWhy: the most memorable of the four; unmistakably not a template.\nTradeoff: loud. Needs discipline to stay readable across admin screens."
+    }
+  ],
+  "launch": { "view": "canvas" }
+}

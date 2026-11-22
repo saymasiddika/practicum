@@ -1,0 +1,41 @@
+{% extends 'base/luminary_base.html' %}
+{% block nav_reviews %}is-active{% endblock %}
+{% block title %}Student reviews | EduAI{% endblock %}
+{% block page_title %}Student reviews{% endblock %}
+{% block page_subtitle %}
+<p>Feedback from students who finished a course. Every review comes from a completed booking.</p>
+{% endblock %}
+
+{% block content %}
+{% if reviews %}
+<div class="grid grid--cards">
+  {% for review in reviews %}
+  <article class="card">
+    <div class="card__body stack-s">
+      <div class="row">
+        <span class="avatar">{{ review.booking.student.username|upper|first }}</span>
+        <div>
+          <p class="strong">{{ review.booking.student.get_full_name|default:review.booking.student.username }}</p>
+          <p class="xsmall muted">on {{ review.booking.tutor.get_full_name|default:review.booking.tutor.username }}</p>
+        </div>
+      </div>
+      <div class="row row--between">
+        <span class="rating__stars">{% for i in "12345" %}{% if forloop.counter <= review.rating %}★{% else %}☆{% endif %}{% endfor %}</span>
+        <span class="xsmall muted">{{ review.created_at|date:'M d, Y' }}</span>
+      </div>
+      <p class="small">{{ review.comment }}</p>
+      <a href="/reviews/{{ review.id }}/" class="btn btn--quiet btn--sm btn--block">Read review</a>
+    </div>
+  </article>
+  {% endfor %}
+</div>
+{% else %}
+<div class="card">
+  <div class="empty">
+    <h3>No reviews yet</h3>
+    <p>Reviews appear here once students complete their courses.</p>
+    <a href="/tutors/" class="btn btn--primary">Find a tutor</a>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

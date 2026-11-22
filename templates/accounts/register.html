@@ -1,0 +1,140 @@
+{% extends 'base/auth_base.html' %}
+{% block title %}Join EduAI{% endblock %}
+{% block auth_title %}Create your account{% endblock %}
+{% block auth_subtitle %}Learn with a tutor, or start teaching. It's free to join.{% endblock %}
+{% block auth_switch %}
+<span class="small muted">Already have an account?</span>
+<a href="/accounts/login/" class="btn btn--secondary btn--sm">Sign in</a>
+{% endblock %}
+
+{% block content %}
+<form method="POST" action="" enctype="multipart/form-data" class="stack">
+  {% csrf_token %}
+
+  <div class="field">
+    <span class="label">I want to join as</span>
+    <div class="optiongrid">
+      <label class="option">
+        <input type="radio" name="role" value="student" {% if form.role != 'tutor' %}checked{% endif %}>
+        <span class="option__box">
+          <strong>Student</strong>
+          <span class="xsmall muted">Find a tutor and book by the month</span>
+        </span>
+      </label>
+      <label class="option">
+        <input type="radio" name="role" value="tutor" {% if form.role == 'tutor' %}checked{% endif %}>
+        <span class="option__box">
+          <strong>Tutor</strong>
+          <span class="xsmall muted">List your subject and set your rate</span>
+        </span>
+      </label>
+    </div>
+  </div>
+
+  <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(min(100%,200px),1fr));gap:16px">
+    <div class="field">
+      <label for="id-first">First name</label>
+      <input type="text" name="first_name" id="id-first" autocomplete="given-name" placeholder="Sayma" value="{{ form.first_name }}">
+    </div>
+    <div class="field">
+      <label for="id-last">Last name</label>
+      <input type="text" name="last_name" id="id-last" autocomplete="family-name" required placeholder="Rahman" value="{{ form.last_name }}">
+    </div>
+  </div>
+
+  <div class="field">
+    <label for="id-email">Email address</label>
+    <input type="email" name="email" id="id-email" autocomplete="email" required placeholder="you@example.com" value="{{ form.email }}">
+  </div>
+
+  <div class="field" id="nid-field" hidden>
+    <label for="nid-input">NID number</label>
+    <input type="text" name="nid_number" id="nid-input" placeholder="1423256795" value="{{ form.nid_number }}">
+    <span class="field__hint">Required for tutor accounts — used to verify your identity.</span>
+  </div>
+
+  <div class="field" id="nid-image-field" hidden>
+    <label for="nid-image-input">NID copy / image</label>
+    <input type="file" name="nid_image" id="nid-image-input" accept="image/png,image/jpeg,image/webp">
+    <span class="field__hint">A clear photo or scan of your NID. JPG, PNG or WEBP, up to 5MB.</span>
+  </div>
+
+  <div class="field" id="edu-level-field" hidden>
+    <label for="edu-level-input">Highest education level</label>
+    <select name="education_level" id="edu-level-input">
+      <option value="">Select level</option>
+      <option value="undergraduate" {% if form.education_level == 'undergraduate' %}selected{% endif %}>Undergraduate / Bachelor's (completed or in progress)</option>
+      <option value="graduate" {% if form.education_level == 'graduate' %}selected{% endif %}>Graduate / Master's</option>
+      <option value="mphil" {% if form.education_level == 'mphil' %}selected{% endif %}>MPhil or equivalent postgraduate research degree</option>
+      <option value="phd" {% if form.education_level == 'phd' %}selected{% endif %}>PhD / Doctorate</option>
+      <option value="other" {% if form.education_level == 'other' %}selected{% endif %}>Other recognized higher education</option>
+    </select>
+    <span class="field__hint">Tutors must have reached at least undergraduate level — SSC/HSC alone does not qualify.</span>
+  </div>
+
+  <div class="field" id="edu-institution-field" hidden>
+    <label for="edu-institution-input">Institution name</label>
+    <input type="text" name="education_institution" id="edu-institution-input" placeholder="e.g. Dhaka University" value="{{ form.education_institution }}">
+    <span class="field__hint">You can add more details and further degrees later from your profile.</span>
+  </div>
+
+  <div class="field">
+    <label for="id-username">Username</label>
+    <input type="text" name="username" id="id-username" autocomplete="username" required placeholder="Choose a username" value="{{ form.username }}">
+  </div>
+
+  <div class="field">
+    <label for="id-password">Password</label>
+    <input type="password" name="password" id="id-password" autocomplete="new-password" required placeholder="At least 8 characters">
+  </div>
+
+  <div class="field">
+    <label for="id-confirm">Confirm password</label>
+    <input type="password" name="confirm_password" id="id-confirm" autocomplete="new-password" required placeholder="Repeat your password">
+  </div>
+
+  <button type="submit" class="btn btn--primary btn--block btn--lg">Create account</button>
+</form>
+{% endblock %}
+
+{% block auth_footer %}
+Already have an account? <a href="/accounts/login/">Sign in</a>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+  var field = document.getElementById('nid-field');
+  var input = document.getElementById('nid-input');
+  var imageField = document.getElementById('nid-image-field');
+  var imageInput = document.getElementById('nid-image-input');
+  var levelField = document.getElementById('edu-level-field');
+  var levelInput = document.getElementById('edu-level-input');
+  var institutionField = document.getElementById('edu-institution-field');
+  var institutionInput = document.getElementById('edu-institution-input');
+
+  function syncNid() {
+    var isTutor = document.querySelector('input[name="role"]:checked').value === 'tutor';
+
+    field.hidden = !isTutor;
+    input.required = isTutor;
+    if (!isTutor) input.value = '';
+
+    imageField.hidden = !isTutor;
+    imageInput.required = isTutor;
+    if (!isTutor) imageInput.value = '';
+
+    levelField.hidden = !isTutor;
+    levelInput.required = isTutor;
+    institutionField.hidden = !isTutor;
+    institutionInput.required = isTutor;
+    if (!isTutor) { levelInput.value = ''; institutionInput.value = ''; }
+  }
+
+  document.querySelectorAll('input[name="role"]').forEach(function (r) {
+    r.addEventListener('change', syncNid);
+  });
+  syncNid();
+})();
+</script>
+{% endblock %}

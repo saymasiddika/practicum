@@ -1,0 +1,77 @@
+{% extends 'base/luminary_base.html' %}
+{% block title %}All bookings | EduAI{% endblock %}
+{% block page_title %}Booking Management{% endblock %}
+{% block nav_all_bookings %}is-active{% endblock %}
+{% block page_subtitle %}<p>Every student–tutor booking, and the state it is in.</p>{% endblock %}
+
+{% block content %}
+<div class="stack">
+
+  <form method="GET" class="card">
+    <div class="card__body row">
+      <div class="field" style="flex:1;min-width:200px">
+        <label for="f-q" class="sr-only">Search</label>
+        <input type="search" name="q" id="f-q" value="{{ search }}" placeholder="Search student or tutor name">
+      </div>
+      <div class="field" style="min-width:170px">
+        <label for="f-status" class="sr-only">Status</label>
+        <select name="status" id="f-status">
+          <option value="" {% if not status_filter %}selected{% endif %}>All statuses</option>
+          {% for value, label in STATUS_CHOICES %}
+          <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <button type="submit" class="btn btn--primary">Filter</button>
+      {% if search or status_filter %}<a href="/admin-panel/bookings/" class="btn btn--quiet">Clear</a>{% endif %}
+    </div>
+  </form>
+
+  <section class="card">
+    <div class="card__head"><h3>All bookings</h3><span class="spacer"></span>
+      <span class="small muted">{{ bookings|length }} record{{ bookings|length|pluralize }}</span></div>
+    <div class="tablewrap">
+      <table class="data">
+        <thead>
+          <tr><th>#</th><th>Student</th><th>Tutor</th><th class="center">Months</th>
+              <th class="right">Total</th><th>Start date</th><th class="center">Status</th>
+              <th class="center">Change status</th><th class="center">Delete</th></tr>
+        </thead>
+        <tbody>
+          {% for b in bookings %}
+          <tr>
+            <td class="muted num">#{{ b.id }}</td>
+            <td><a href="/admin-panel/users/{{ b.student.id }}/" class="strong">{{ b.student.username }}</a></td>
+            <td>
+              <a href="/admin-panel/users/{{ b.tutor.id }}/" class="strong">{{ b.tutor.username }}</a>
+              <div class="xsmall muted num">৳{{ b.monthly_rate|floatformat:"0g" }}/mo</div>
+            </td>
+            <td class="center num">{{ b.months }}</td>
+            <td class="right"><span class="money num">৳{{ b.total_amount|floatformat:"0g" }}</span></td>
+            <td class="small muted nowrap">{{ b.date|date:"M d, Y" }}</td>
+            <td class="center"><span class="pill pill--{{ b.status }}">{{ b.get_status_display }}</span></td>
+            <td>
+              <div class="cellactions center">
+                {% for value, label in STATUS_CHOICES %}
+                {% if b.status != value %}
+                <form method="POST" action="/admin-panel/bookings/{{ b.id }}/status/{{ value }}/" class="inline-form">
+                  {% csrf_token %}
+                  <button type="submit" class="btn btn--quiet btn--sm">{{ label }}</button>
+                </form>
+                {% endif %}
+                {% endfor %}
+              </div>
+            </td>
+            <td class="center">
+              <a href="/admin-panel/bookings/{{ b.id }}/delete/" class="iconbtn iconbtn--danger" title="Delete">✕</a>
+            </td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="9"><div class="empty"><h3>No bookings found</h3><p>Nothing matches this filter yet.</p></div></td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>
+{% endblock %}

@@ -1,0 +1,115 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Archivo:wght@400;500;600;700&display=swap">
+  <style>
+    body { margin: 0; font-family: 'Archivo', system-ui, sans-serif; background: #fffdf6; }
+    a { color: #d1372b; } a:hover { color: #a32a20; }
+    * { box-sizing: border-box; }
+    .black { font-family: 'Archivo Black', system-ui, sans-serif; font-weight: 400; }
+  </style>
+</helmet>
+
+<div style="width: 980px; background: #fffdf6; color: #16150f;">
+
+  <div style="display: flex; align-items: center; gap: 24px; padding: 16px 34px; background: #16150f; color: #fffdf6;">
+    <div class="black" style="font-size: 20px; letter-spacing: -0.02em;">EduAI</div>
+    <div style="display: flex; gap: 20px; font-size: 14px; font-weight: 500; color: #cdc9b8;">
+      <span>Find tutors</span><span>How it works</span><span>Teach</span>
+    </div>
+    <div style="flex-grow: 1;"></div>
+    <div style="display: flex; gap: 14px; align-items: center; font-size: 14px; font-weight: 600;">
+      <span style="color: #cdc9b8;">Log in</span>
+      <span style="background: #f0b429; color: #16150f; padding: 8px 16px;">Join free</span>
+    </div>
+  </div>
+
+  <div style="display: grid; grid-template-columns: minmax(0, 1fr) 300px;">
+    <div style="padding: 44px 34px 40px;">
+      <div style="display: inline-block; background: #d1372b; color: #fffdf6; font-size: 12px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; padding: 5px 11px;">
+        34 tutors · 11 subjects
+      </div>
+      <h1 class="black" style="font-size: 66px; line-height: 0.94; letter-spacing: -0.04em; margin: 18px 0 0; max-width: 13ch;">
+        BOOK A<br>MONTH.<br><span style="color: #d1372b;">START</span> <span style="background: #f0b429; padding: 0 8px;">MONDAY.</span>
+      </h1>
+      <p style="font-size: 17px; line-height: 1.5; color: #4c4a3d; margin: 22px 0 0; max-width: 44ch;">
+        One rate, one month, one tutor. Pay with bKash, Nagad or Rocket —
+        all at once or in instalments.
+      </p>
+      <div style="display: flex; margin-top: 26px; max-width: 430px; border: 3px solid #16150f;">
+        <div style="flex-grow: 1; padding: 13px 16px; font-size: 15px; color: #8a8878;">Bangla, Class 8…</div>
+        <div class="black" style="background: #16150f; color: #fffdf6; padding: 13px 22px; font-size: 14px;">FIND</div>
+      </div>
+    </div>
+
+    <div style="background: #f0b429; padding: 34px 26px; display: flex; flex-direction: column; gap: 18px;">
+      <div class="black" style="font-size: 15px; letter-spacing: -0.01em;">WHAT YOU PAY</div>
+      <sc-for list="{{fees}}" as="f" hint-placeholder-count="3">
+        <div style="border-top: 2px solid #16150f; padding-top: 10px;">
+          <div class="black" style="font-size: 27px; line-height: 1;">{{f.value}}</div>
+          <div style="font-size: 13px; font-weight: 600; margin-top: 4px;">{{f.label}}</div>
+        </div>
+      </sc-for>
+      <div style="font-size: 12px; line-height: 1.45; color: #4c4a3d; margin-top: 2px;">
+        Shown in full before you pay. Confirmed by an admin against your transaction ID.
+      </div>
+    </div>
+  </div>
+
+  <div style="padding: 30px 34px 40px; border-top: 3px solid #16150f;">
+    <div style="display: flex; align-items: baseline; gap: 14px; margin-bottom: 20px;">
+      <div class="black" style="font-size: 26px; letter-spacing: -0.02em;">TEACHING NOW</div>
+      <div style="flex-grow: 1;"></div>
+      <div style="font-size: 14px; font-weight: 600; color: #d1372b;">See all →</div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px;">
+      <sc-for list="{{tutors}}" as="t" hint-placeholder-count="3">
+        <div style="border: 3px solid #16150f; display: flex; flex-direction: column;">
+          <div style="background: {{t.tint}}; padding: 16px; display: flex; align-items: center; gap: 12px; border-bottom: 3px solid #16150f;">
+            <div class="black" style="width: 40px; height: 40px; background: #16150f; color: #fffdf6; display: grid; place-items: center; font-size: 17px;">{{t.initial}}</div>
+            <div class="black" style="font-size: 13px; letter-spacing: 0.04em; text-transform: uppercase;">{{t.subject}}</div>
+          </div>
+          <div style="padding: 16px; display: flex; flex-direction: column; gap: 7px; flex-grow: 1;">
+            <div style="font-size: 16px; font-weight: 700;">{{t.name}}</div>
+            <div style="font-size: 13px; line-height: 1.45; color: #56543f;">{{t.blurb}}</div>
+            <div style="flex-grow: 1;"></div>
+            <div style="display: flex; justify-content: space-between; align-items: baseline; padding-top: 12px; border-top: 2px solid #e2decb;">
+              <span class="black" style="font-size: 20px;">{{t.rate}}</span>
+              <span style="font-size: 12px; font-weight: 600; color: #56543f;">{{t.days}}</span>
+            </div>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      fees: [
+        { value: '৳4,000', label: 'typical monthly rate' },
+        { value: '50%', label: 'first month platform fee' },
+        { value: '10%', label: 'every month after' }
+      ],
+      tutors: [
+        { initial: 'A', name: 'Ayesha Rahman', subject: 'Mathematics', rate: '৳4,500', days: 'Sun/Tue/Thu', tint: '#ffe9a8', blurb: 'HSC calculus and algebra, ten years teaching.' },
+        { initial: 'R', name: 'Rakib Hasan', subject: 'Physics', rate: '৳4,000', days: 'Mon/Wed', tint: '#c7e3d4', blurb: 'Builds intuition first, formulas second.' },
+        { initial: 'N', name: 'Nusrat Jahan', subject: 'English', rate: '৳3,500', days: 'Sat/Sun', tint: '#f8cfc3', blurb: 'IELTS and spoken English, all levels.' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

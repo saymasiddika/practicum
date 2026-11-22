@@ -1,0 +1,128 @@
+{% extends 'base/luminary_base.html' %}
+{% block title %}My profile | EduAI{% endblock %}
+{% block page_title %}My Profile{% endblock %}
+{% block nav_profile %}is-active{% endblock %}
+
+{% block content %}
+<div class="container--mid" style="padding:0">
+<div class="stack">
+
+  <section class="card">
+    <div class="card__body">
+      <div class="row row--between">
+        <div class="row">
+          {% if user.avatar %}
+            <img src="{{ user.avatar.url }}" alt="{{ user.username }}" class="avatar avatar--lg">
+          {% else %}
+            <span class="avatar avatar--lg">{{ user.username|upper|first }}</span>
+          {% endif %}
+          <div class="stack-s" style="gap:4px">
+            <h2>{{ user.get_full_name|default:user.username }}</h2>
+            <div class="row" style="gap:8px">
+              {% if user.is_superuser %}<span class="pill pill--rejected">Super admin</span>
+              {% elif user.is_staff %}<span class="pill pill--pending">Staff</span>
+              {% elif user.role == 'tutor' %}<span class="pill pill--confirmed">Tutor</span>
+              {% else %}<span class="pill pill--approved">Student</span>{% endif %}
+              <span class="small muted">@{{ user.username }} · joined {{ user.date_joined|date:'F Y' }}</span>
+            </div>
+          </div>
+        </div>
+        <div class="cellactions">
+          {% if user.is_superuser or user.is_staff %}
+          <a href="/dashboard/" class="btn btn--primary btn--sm">Admin panel</a>
+          {% else %}
+          <a href="/accounts/edit-profile/" class="btn btn--primary btn--sm">Edit profile</a>
+          {% endif %}
+          <a href="/accounts/change-password/" class="btn btn--quiet btn--sm">Change password</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="grid grid--2">
+
+    <section class="card">
+      <div class="card__head"><h3>Account information</h3></div>
+      <div class="card__body">
+        <dl class="deflist">
+          <dt>Username</dt><dd>{{ user.username }}</dd>
+          <dt>Email</dt><dd>{{ user.email|default:"Not set" }}</dd>
+          <dt>Full name</dt><dd>{{ user.get_full_name|default:"Not set" }}</dd>
+          <dt>Phone</dt><dd>{{ user.phone|default:"Not set" }}</dd>
+          <dt>Role</dt><dd>{% if user.is_superuser %}Super admin{% else %}{{ user.role|capfirst }}{% endif %}</dd>
+          {% if user.role == 'tutor' %}
+          <dt>NID verification</dt>
+          <dd>
+            <span class="pill pill--{% if user.nid_verification_status == 'verified' %}approved{% elif user.nid_verification_status == 'pending' %}pending{% elif user.nid_verification_status == 'rejected' %}rejected{% else %}cancelled{% endif %}">
+              {{ user.get_nid_verification_status_display }}
+            </span>
+          </dd>
+          {% endif %}
+        </dl>
+        {% if user.bio %}
+        <p class="small muted" style="margin-top:16px">{{ user.bio }}</p>
+        {% endif %}
+        {% if user.education %}
+        <p class="small muted" style="margin-top:4px"><strong>Education:</strong> {{ user.education }}</p>
+        {% endif %}
+      </div>
+    </section>
+
+    {% if user.is_superuser or user.is_staff %}
+    <section class="card">
+      <div class="card__head"><h3>Admin shortcuts</h3></div>
+      <div class="card__body stack-s">
+        <a href="/payments/manage/" class="btn btn--quiet btn--block">Payment review</a>
+        <a href="/admin-panel/bookings/" class="btn btn--quiet btn--block">All bookings</a>
+        <a href="/admin-panel/users/" class="btn btn--quiet btn--block">User management</a>
+        <a href="/admin-panel/reviews/" class="btn btn--quiet btn--block">Reviews</a>
+      </div>
+    </section>
+
+    {% elif user.role == 'tutor' %}
+    <section class="card">
+      <div class="card__head"><h3>List of courses</h3></div>
+      <div class="card__body stack">
+        {% if user.tutor_profile %}
+        <dl class="deflist">
+          <dt>Teaches</dt>
+          <dd>{% for s in user.tutor_profile.subjects %}{% if not forloop.first %}, {% endif %}{{ s }}{% empty %}No courses yet{% endfor %}</dd>
+          <dt>Courses</dt><dd class="num">{{ user.courses.count }}</dd>
+          <dt>Rating</dt><dd class="num">{{ user.tutor_profile.rating }} / 5</dd>
+        </dl>
+        {% if user.tutor_profile.bio %}<p class="small muted">{{ user.tutor_profile.bio }}</p>{% endif %}
+        <a href="/tutors/edit-profile/" class="btn btn--secondary btn--block">Edit tutor profile</a>
+        {% else %}
+        <p class="muted small">You haven't published a tutor listing yet. Students can't find you until you do.</p>
+        <a href="/tutors/create-profile/" class="btn btn--primary btn--block">Create tutor profile</a>
+        {% endif %}
+      </div>
+    </section>
+
+    {% else %}
+    <section class="card">
+      <div class="card__head"><h3>Quick links</h3></div>
+      <div class="card__body stack-s">
+        <a href="/tutors/" class="btn btn--quiet btn--block">Find a tutor</a>
+        <a href="/bookings/" class="btn btn--quiet btn--block">My bookings</a>
+        <a href="/payments/" class="btn btn--quiet btn--block">My payments</a>
+      </div>
+    </section>
+    {% endif %}
+  </div>
+
+  {% if not user.is_superuser and not user.is_staff %}
+  <section class="card">
+    <div class="card__head"><h3>Account settings</h3></div>
+    <div class="card__body row">
+      <a href="/accounts/edit-profile/" class="btn btn--quiet">Edit profile</a>
+      <a href="/accounts/change-password/" class="btn btn--quiet">Change password</a>
+      <span class="spacer"></span>
+      <a href="/accounts/delete-account/" class="btn btn--ghost" style="color:var(--red)">Delete account</a>
+    </div>
+  </section>
+  {% endif %}
+
+</div>
+</div>
+{% endblock %}

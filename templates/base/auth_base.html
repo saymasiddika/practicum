@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+{% load static %}
+{% load assets %}
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>{% block title %}Sign in | EduAI{% endblock %}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;600;700&text=%E0%A7%B3&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0..1,0&display=block" rel="stylesheet"/>
+<link rel="stylesheet" href="{% static_v 'css/eduai.css' %}"/>
+</head>
+<body>
+<main class="authpage">
+  <div class="authcard">
+    <div class="authcard__head">
+      <a href="/" class="authcard__logo" aria-label="EduAI home">
+        <span class="ms" aria-hidden="true">school</span>
+      </a>
+      <h1>{% block auth_title %}Welcome back{% endblock %}</h1>
+      <p>{% block auth_subtitle %}Sign in to your account to continue{% endblock %}</p>
+    </div>
+
+    {% if messages %}
+    <div class="stack-s" style="margin-bottom:2j0px">
+      {% for msg in messages %}
+      <div class="alert {% if 'error' in msg.tags %}alert--error{% elif 'warning' in msg.tags %}alert--warning{% else %}alert--success{% endif %}" style="justify-content:center;text-align:center">
+        <span>{{ msg }}</span>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="card">
+      <div class="card__body">
+        {% block content %}{% endblock %}
+      </div>
+    </div>
+
+    <p class="authfoot">{% block auth_footer %}{% endblock %}</p>
+  </div>
+</main>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

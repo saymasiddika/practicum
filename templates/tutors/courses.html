@@ -1,0 +1,112 @@
+{% extends 'base/luminary_base.html' %}
+{% block nav_courses %}is-active{% endblock %}
+{% block title %}My courses | EduAI{% endblock %}
+
+{% block pagehead %}
+<div class="pagehead">
+  <div class="container">
+    <div class="pagehead__title">
+      <h1>My courses</h1>
+      <span class="spacer"></span>
+      <a href="/tutors/courses/add/" class="btn btn--primary">Add a course</a>
+    </div>
+    <p>Each course is one subject, at one price, in one weekly slot. Students
+       book a course, not you directly — so add one for every class you want
+       to teach.</p>
+  </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="stack">
+
+  {% if not has_profile %}
+  <div class="alert alert--warning">
+    <strong>Set up your profile first.</strong> Students only see tutors who
+    have one, so your courses will not appear until you do.
+    <a href="/tutors/edit-profile/">Write your profile</a>.
+  </div>
+  {% endif %}
+
+  {% if courses %}
+  <section class="card">
+    <div class="card__head">
+      <h3>Published and draft</h3>
+      <span class="spacer"></span>
+      <span class="small muted">{{ courses|length }} course{{ courses|length|pluralize }}</span>
+    </div>
+
+    <div class="tablewrap">
+      <table class="data">
+        <thead>
+          <tr>
+            <th>Course</th><th>Subject</th><th>Schedule</th>
+            <th class="right">Per month</th><th class="right">Length</th>
+            <th class="center">Status</th><th class="center">Actions</th>
+          </tr>
+          </thead>
+        <tbody>
+          {% for course in courses %}
+          <tr>
+            <td class="strong">{{ course.name }}</td>
+            <td>{{ course.subject }}</td>
+            <td class="small">{{ course.schedule_display }}</td>
+            <td class="right"><span class="money num">৳{{ course.monthly_rate|floatformat:"0g" }}</span></td>
+            <td class="right num">{{ course.months }} mo</td>
+            <td class="center">
+              {% if not course.is_active %}<span class="pill pill--rejected">Unpublished</span>
+              {% elif course.active_booking %}<span class="pill pill--approved">Booked</span>
+              {% else %}<span class="pill pill--pending">Open</span>{% endif %}
+            </td>
+            <td class="center">
+              <div class="cellactions center">
+                <a href="/tutors/courses/{{ course.id }}/edit/" class="btn btn--secondary btn--sm">Edit</a>
+                <form method="POST" action="/tutors/courses/{{ course.id }}/toggle/" class="inline-form">
+                  {% csrf_token %}
+                  <button type="submit" class="btn btn--secondary btn--sm">{% if course.is_active %}Unpublish{% else %}Publish{% endif %}</button>
+                </form>
+                <form method="POST" action="/tutors/courses/{{ course.id }}/delete/" class="inline-form"
+                      onsubmit="return confirm('Remove this course?')">
+                  {% csrf_token %}
+                  <button type="submit" class="btn btn--danger btn--sm">Remove</button>
+                </form>
+              </div>
+            </td>
+          </tr>
+          {% if course.active_booking %}
+          <tr>
+            <td colspan="7" class="xsmall muted">
+              {{ course.active_booking.student.get_full_name|default:course.active_booking.student.username }}
+              is taking this course — it will not accept another student until
+              that booking ends.
+            </td>
+          </tr>
+          {% endif %}
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <p class="small muted">
+    A course holds one student at a time, because you cannot teach two people
+    in the same hour. To take more students, add a course for each slot you
+    are free.
+  </p>
+
+  {% else %}
+  <section class="card">
+    <div class="card__body stack-s">
+      <h3>No courses yet</h3>
+      <p class="muted">Students cannot book you until you publish something to
+         book. A course takes a minute: the subject, what you call it, when it
+         runs and what it costs.</p>
+      <div class="row">
+        <a href="/tutors/courses/add/" class="btn btn--primary">Add your first course</a>
+      </div>
+    </div>
+  </section>
+  {% endif %}
+
+</div>
+{% endblock %}
